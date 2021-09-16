@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulate newincrementalgame</title>
+  <link type="text/css" rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" />
+  <link type="text/css" rel="stylesheet" href="nig_sim.css" />
+</head>
+
+<body>
+  <div id="app" class="container">
+
+    <div class="btn-group" role="group" aria-label="control buttons">
+      <button type="button" class="btn btn-outline-dark" @click="importsave()">データ取り込み</button>
+
+      <input type="checkbox" class="btn-check" id="basicInfoB" autocomplete="off">
+      <label class="btn btn-outline-dark" for="basicInfoB" data-bs-toggle="collapse" data-bs-target="#basicInfo"
+        aria-expanded="false" aria-controls="basicInfo">基本</label>
+
+      <input type="checkbox" class="btn-check" id="gaboughtB" autocomplete="off">
+      <label class="btn btn-outline-dark" for="gaboughtB" data-bs-toggle="collapse" data-bs-target="#gabought"
+        aria-expanded="false" aria-controls="gabought">器</label>
+
+      <input type="checkbox" class="btn-check" id="levelInfoB" autocomplete="off">
+      <label class="btn btn-outline-dark" for="levelInfoB" data-bs-toggle="collapse" data-bs-target="#levelInfo"
+        aria-expanded="false" aria-controls="levelInfo">段位</label>
+
+      <input type="checkbox" class="btn-check" id="rankInfoB" autocomplete="off">
+      <label class="btn btn-outline-dark" for="rankInfoB" data-bs-toggle="collapse" data-bs-target="#rankInfo"
+        aria-expanded="false" aria-controls="rankInfo">階位</label>
+
+      <input type="checkbox" class="btn-check" id="challengeViewB" autocomplete="off">
+      <label class="btn btn-outline-dark" for="challengeViewB" data-bs-toggle="collapse" data-bs-target="#challengeView"
+        aria-expanded="false" aria-controls="challengeView">挑戦</label>
+
+      <input type="checkbox" class="btn-check" id="simulatedChkpsB" autocomplete="off">
+      <label class="btn btn-outline-dark" for="simulatedChkpsB" data-bs-toggle="collapse"
+        data-bs-target="#simulatedChkps" aria-expanded="false" aria-controls="simulatedChkps">到達</label>
+
+      <div class="btn-group" role="group">
+        <button type="button" class="btn btn-outline-dark dropdown-toggle" id="worldSelect" data-bs-toggle="dropdown"
+          aria-expanded="false">
+          世界{{ nig.world + 1 }}
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="worldSelect">
+          <li v-for="i in 10" :key="i" v-show="nig.worldopened[i-1]">
+            <button type="button" class="dropdown-item" @click="selectWorld(i - 1)">世界{{ i }}</button>
+          </li>
+        </ul>
+      </div>
+
+      <input type="checkbox" class="btn-check" id="helpMessageB" autocomplete="off">
+      <label class="btn btn-outline-dark" for="helpMessageB" data-bs-toggle="collapse" data-bs-target="#helpMessage"
+        aria-expanded="false" aria-controls="helpMessage">？</label>
+    </div>
+
+    <div class="collapse" id="basicInfo">
+      <div class="card card-body">
+        <div id="money">ポイント: {{ nig.player.money.toExponential(3) }}</div>
+        <div>段位: {{ nig.player.level.toNumber() }} 段位リセット: {{ nig.player.levelresettime.toNumber() }}</div>
+        <div>階位: {{ nig.player.rank.toNumber() }} 階位リセット: {{ nig.player.rankresettime.toNumber() }}</div>
+        <div>最大取得段位: {{ nig.player.maxlevelgained }}</div>
+        <div>成功挑戦数: {{ nig.player.challengecleared.length }}</div>
+        <div>成功階位挑戦数: {{ nig.player.rankchallengecleared.length }}</div>
+        <div>記憶: {{ nig.memory }}</div>
+      </div>
+    </div>
+
+    <div class="collapse card-group" id="gabought">
+      <div class="card">
+        <ul class="list-group list-group-flush">
+          <li v-for="i in 8" :key="i" class="list-group-item">
+            発生器{{ i }}: {{ nig.player.generators[i-1].toExponential(3) }} 購入数: {{
+            nig.player.generatorsBought[i-1].toNumber() }}
+          </li>
+        </ul>
+      </div>
+      <div class="card">
+        <ul class="list-group list-group-flush">
+          <li v-for="i in 8" :key="i" class="list-group-item">
+            <span v-if="i==1||nig.player.levelresettime.gt(0)&&(i==2||nig.player.levelitems[1]>i-3)">
+              時間加速器{{ i }}: {{ nig.player.accelerators[i-1].toExponential(3) }} 購入数: {{
+              nig.player.acceleratorsBought[i-1].toNumber() }}
+            </span>
+            <span v-else>{{ '　' }}</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="collapse" id="levelInfo">
+      <div class="card card-body">
+        <div>有効挑戦: {{ nig.player.onchallenge ? nig.player.challenges.map(x => x + 1) : [] }}</div>
+        <div>効力: {{ nig.activechallengebonuses.map(x => x + 1) }}</div>
+      </div>
+    </div>
+
+    <div class="collapse" id="rankInfo">
+      <div class="card card-body">
+        <div>段位効力1: {{ nig.player.levelitems[0] }}</div>
+        <div>段位効力2: {{ nig.player.levelitems[1] }}</div>
+      </div>
+    </div>
+
+    <div class="collapse card card-body" id="challengeView">
+      <div v-bind:class="{ showclearedchallenge: !hideclearedchallenge, hidechallengecolor: hidechallengecolor }">
+        <div>
+          <button type="button" class="btn btn-outline-dark" @click="simulatechallengesall">シミュレート</button>
+          ⚠重いので注意
+        </div>
+        <div class="form-check">
+          <input type="checkbox" class="form-check-input" id="hideclearedchallenge" v-model="hideclearedchallenge">
+          <label class="form-check-label" for="hideclearedchallenge">クリア済を非表示</label>
+        </div>
+        <div class="form-check">
+          <input type="checkbox" class="form-check-input" id="hidechallengecolor" v-model="hidechallengecolor">
+          <label class="form-check-label" for="hidechallengecolor">クリア時間を非表示</label>
+        </div>
+        <table class="chaltable">
+          <thead>
+            <tr v-for="i in 4" :key="i">
+              <th colspan="4" rowspan="4" v-if="i==1">
+                <div class="chalcell">{{ nig.player.challengecleared.length }}</div>
+              </th>
+              <th v-for="j in 16" :key="j">
+                <div class="chalcell">{{ (j - 1) % (1 << i)>= (1 << i - 1) ? i : '' }}</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="i in 16" :key="i">
+              <th v-for="j in 4" :key="j">
+                <div class="chalcell">{{ (i - 1) % (1 << j)>= (1 << j - 1) ? j + 4 : '' }}</div>
+              </th>
+              <td v-for="j in 16" :key="j">
+                <div class="chalcell" v-bind:class="challengecell(i-1,j-1)">
+                  <div class="chalcolor" v-bind:style="challengescolor(i-1,j-1)"></div>
+                  <span class="chaltooltip" v-html="challengemessage(i-1,j-1)"></span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="chalcolorbar">
+          <span v-for="i in 7" :key="i" v-bind:style="scalesampletime(sampletime[i-1])">{{ sampletimelabel[i-1]
+            }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="collapse card" id="simulatedChkps">
+      <div class="card-body">
+        <button type="button" class="btn btn-outline-dark" @click="simulatecheckpoints">シミュレート</button>
+        <div class="input-group">
+          <select class="form-select" v-model="checkpointtarget" aria-label="checkpoint target">
+            <option disabled value="">選択</option>
+            <option value="levelreset">段位リセット</option>
+            <option value="rankreset">階位リセット</option>
+            <option value="input">入力</option>
+          </select>
+          <span class="input-group-text" v-if="checkpointtarget=='levelreset' || checkpointtarget=='rankreset'">で</span>
+          <input type="text" class="form-control" v-model="checkpointvalue" aria-label="Text input">
+          <span class="input-group-text" v-if="checkpointtarget=='levelreset' || checkpointtarget=='rankreset'">
+            {{ checkpointtarget=='levelreset' ? '段位' : '階位' }}獲得する
+          </span>
+          <span class="input-group-text">{{ tmoney.toExponential(3) }} ポイント</span>
+          <button class="btn btn-outline-dark" type="button" @click="addcheckpoint">追加</button>
+        </div>
+      </div>
+      <ul class="list-group list-group-flush">
+        <li v-for="(chkp, i) in checkpoints" class="list-group-item">
+          <span>
+            {{ simulatedcheckpoints[nig.world].has(chkp) ? simulatedcheckpoints[nig.world].get(chkp) :
+            chkp.toExponential(3) + " ポイントまで ???" }}
+          </span>
+          <button type="button" class="btn-close float-end" @click="removecheckpoint"></button>
+        </li>
+      </ul>
+    </div>
+
+    <div class="collapse card" id="helpMessage">
+      <div class="card-body">
+        <h5 class="card-title">シミュレーション</h5>
+        <p class="card-text">
+          発生器と時間加速器を購入しながらシミュレーションを行っている。
+          購入順は、金額の小さい順、同じなら発生器を優先、同じなら番号の大きい方を優先する。
+          それ以外の条件（モード、効力、挑戦、段位効力）については、基本的に固定。
+        </p>
+      </div>
+      <div class="card-body">
+        <h5 class="card-title">挑戦シミュレーション</h5>
+        <p class="card-text">
+          挑戦開始時に効力5,2,1の順に買えるだけ買う。
+          その後にどの効力を使うかを効力3,4,7,8,11,12,14の極大集合を全探索する。
+          モードは発生器iならi-1固定。
+        </p>
+      </div>
+      <div class="card-body">
+        <h5 class="card-title">誤差</h5>
+        <p class="card-text">
+          内部では浮動小数点数を使用しているため、誤差が発生する。
+          所要ticksは（バグがなければ）ほとんどの場合、正確に求められる。
+          一方、所要時間の計算は所要ticksが大きい場合に時間がかかるので近似している。
+          現在の新しい放置ゲームの実装では1tickの時間が間隙と更新にかかる時間の和なので、ここでも誤差が発生する。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/vue@next"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"></script>
+  <script src="https://unpkg.com/break_infinity.js/dist/break_infinity.min.js"></script>
+  <script src="nig_sim.js"></script>
+</body>
+
+</html>
