@@ -625,7 +625,7 @@ class Nig {
         return challengebonusescandidates;
     }
 
-    simulatechallenges(challengeid, challengebonusescandidates) {
+    simulatechallenges(challengeid, challengebonusescandidates, rank) {
         let minres = {
             tick: new Decimal('Infinity'),
             sec: new Decimal('Infinity'),
@@ -660,7 +660,7 @@ class Nig {
             challengebonuses.forEach(c => this.buyRewards(c));
             this.activechallengebonuses = (this.player.challengebonuses.includes(4) || !this.player.onchallenge) ? this.player.challengebonuses : [];
 
-            let checkpoints = [new Decimal(this.player.challenges.includes(0) ? '1e24' : '1e18')];
+            let checkpoints = [new Decimal(this.player.challenges.includes(0) ? (rank ? '1e96' : '1e24') : (rank ? '1e72' : '1e18'))];
             let res = this.simulate(checkpoints)[0];
             if (res.sec.lessThan(minres.sec)) {
                 minres = {
@@ -700,11 +700,14 @@ Vue.createApp({
             nig: new Nig(),
             simulatedcheckpoints: Array.from(new Array(10), () => new Map()),
             challengesimulated: Array.from(new Array(10), () => new Array(256).fill(null)),
+            rankchallengesimulated: Array.from(new Array(10), () => new Array(256).fill(null)),
             checkpoints: [new Decimal('1e18'), new Decimal('1e72')],
             sampletime: [1, 60, 3600, 86400, 2592000, 31536000, 3153600000],
             sampletimelabel: ['s', 'm', 'h', 'D', 'M', 'Y', 'C'],
             hideclearedchallenge: false,
             hidechallengecolor: false,
+            hideclearedrankchallenge: false,
+            hiderankchallengecolor: false,
             checkpointtarget: '',
             checkpointvalue: '',
         }
@@ -726,10 +729,10 @@ Vue.createApp({
         },
         challengecell: function () {
             let self = this;
-            return (i, j) => {
+            return (i, j, rank = false) => {
                 const id = self.challengeid(i, j);
                 const nowchallenging = self.nig.player.onchallenge && self.nig.calcchallengeid() == id;
-                const clearedchallenge = self.nig.player.challengecleared.includes(id);
+                const clearedchallenge = rank ? self.nig.player.rankchallengecleared.includes(id) : self.nig.player.challengecleared.includes(id);
                 return {
                     nowchallenging: nowchallenging,
                     clearedchallenge: clearedchallenge,
@@ -739,11 +742,12 @@ Vue.createApp({
         },
         challengescolor: function () {
             let self = this;
-            return (i, j) => {
+            return (i, j, rank = false) => {
                 const id = self.challengeid(i, j);
                 let color = 'transparent';
-                if (self.challengesimulated[this.nig.world][id] !== null) {
-                    const sec = self.challengesimulated[this.nig.world][id].sec;
+                const res = rank ? self.rankchallengesimulated[this.nig.world][id] : self.challengesimulated[this.nig.world][id];
+                if (res !== null) {
+                    const sec = res.sec;
                     if (sec.eq(new Decimal('Infinity'))) {
                         color = 'rgb(255, 255, 255)';
                     } else {
@@ -756,9 +760,9 @@ Vue.createApp({
         },
         challengemessage: function () {
             let self = this;
-            return (i, j) => {
+            return (i, j, rank = false) => {
                 const id = self.challengeid(i, j);
-                const res = self.challengesimulated[this.nig.world][id];
+                const res = rank ? self.rankchallengesimulated[this.nig.world][id] : self.challengesimulated[this.nig.world][id];
                 let message = 'Uncalculated';
                 if (res !== null) {
                     message = res.tick.toExponential(3) + ' ticks';
@@ -818,30 +822,38 @@ Vue.createApp({
                 });
             }, 0);
         },
-        simulatechallenges(challengeid, challengebonusescandidates) {
+        simulatechallenges(challengeid, challengebonusescandidates, rank) {
             setTimeout(() => {
                 if (this.challengesimulated[this.nig.world][challengeid] !== null) return;
                 let nig = new Nig();
                 nig.loadplayerb(btoa(JSON.stringify(this.nig.player)));
                 nig.memory = this.nig.memory;
-                this.challengesimulated[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates);
+                if (rank) {
+                    this.rankchallengesimulated[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates, rank);
+                } else {
+                    this.challengesimulated[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates, rank);
+                }
             }, 0);
         },
-        simulatechallengesrec(challengeid, challengebonusescandidates) {
+        simulatechallengesrec(challengeid, challengebonusescandidates, rank) {
             setTimeout(() => {
                 if (challengeid >= 256) return;
                 if (this.challengesimulated[this.nig.world][challengeid] === null) {
                     let nig = new Nig();
                     nig.loadplayerb(btoa(JSON.stringify(this.nig.player)));
                     nig.memory = this.nig.memory;
-                    this.challengesimulated[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates);
+                    if (rank) {
+                        this.rankchallengesimulated[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates, rank);
+                    } else {
+                        this.challengesimulated[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates, rank);
+                    }
                 }
-                this.simulatechallengesrec(challengeid + 1, challengebonusescandidates);
+                this.simulatechallengesrec(challengeid + 1, challengebonusescandidates, rank);
             }, 0);
         },
-        simulatechallengesall() {
+        simulatechallengesall(rank) {
             const challengebonusescandidates = this.nig.maximumbonuses();
-            this.simulatechallengesrec(1, challengebonusescandidates);
+            this.simulatechallengesrec(1, challengebonusescandidates, rank);
         },
         scalesampletime(t) {
             let r = Math.log10(t) / Math.log10(3153600000) * 100;
