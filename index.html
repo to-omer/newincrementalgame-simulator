@@ -113,7 +113,7 @@
       <div v-bind:class="{ showclearedchallenge: !hideclearedchallenge, hidechallengecolor: hidechallengecolor }">
         <div>
           <button type="button" class="btn btn-outline-dark" @click="simulatechallengesall(false)">シミュレート</button>
-          ⚠重いので注意
+          ⚠重いので注意　クリックで1マスずつシミュレート
         </div>
         <div class="form-check">
           <input type="checkbox" class="form-check-input" id="hideclearedchallenge" v-model="hideclearedchallenge">
@@ -140,7 +140,8 @@
                 <div class="chalcell">{{ (i - 1) % (1 << j)>= (1 << j - 1) ? j + 4 : '' }}</div>
               </th>
               <td v-for="j in 16" :key="j">
-                <div class="chalcell" v-bind:class="challengecell(i-1,j-1)">
+                <div class="chalcell" v-bind:class="challengecell(i-1,j-1)"
+                  @click="simulatechallengeone(i-1,j-1,false)">
                   <div class="chalcolor" v-bind:style="challengescolor(i-1,j-1)"></div>
                   <span class="chaltooltip" v-html="challengemessage(i-1,j-1)"></span>
                 </div>
@@ -160,7 +161,7 @@
         v-bind:class="{ showclearedchallenge: !hideclearedrankchallenge, hidechallengecolor: hiderankchallengecolor }">
         <div>
           <button type="button" class="btn btn-outline-dark" @click="simulatechallengesall(true)">シミュレート</button>
-          ⚠重いので注意
+          ⚠重いので注意　クリックで1マスずつシミュレート
         </div>
         <div class="form-check">
           <input type="checkbox" class="form-check-input" id="hideclearedrankchallenge"
@@ -188,7 +189,8 @@
                 <div class="chalcell">{{ (i - 1) % (1 << j)>= (1 << j - 1) ? j + 4 : '' }}</div>
               </th>
               <td v-for="j in 16" :key="j">
-                <div class="chalcell" v-bind:class="challengecell(i-1,j-1,true)">
+                <div class="chalcell" v-bind:class="challengecell(i-1,j-1,true)"
+                  @click="simulatechallengeone(i-1,j-1,true)">
                   <div class="chalcolor" v-bind:style="challengescolor(i-1,j-1,true)"></div>
                   <span class="chaltooltip" v-html="challengemessage(i-1,j-1,true)"></span>
                 </div>

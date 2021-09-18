@@ -851,6 +851,11 @@ Vue.createApp({
                 this.simulatechallengesrec(challengeid + 1, challengebonusescandidates, rank);
             }, 0);
         },
+        simulatechallengeone(i, j, rank) {
+            const id = this.challengeid(i, j);
+            const challengebonusescandidates = this.nig.maximumbonuses();
+            this.simulatechallenges(id, challengebonusescandidates, rank);
+        },
         simulatechallengesall(rank) {
             const challengebonusescandidates = this.nig.maximumbonuses();
             this.simulatechallengesrec(1, challengebonusescandidates, rank);
