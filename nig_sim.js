@@ -794,11 +794,13 @@ Vue.createApp({
         clearCurrentCache() {
             this.simulatedcheckpoints[this.nig.world].clear();
             this.challengesimulated[this.nig.world] = new Array(256).fill(null);
+            this.rankchallengesimulated[this.nig.world] = new Array(256).fill(null);
         },
         clearAllCache() {
             for (let i = 0; i < 10; i++) {
                 this.simulatedcheckpoints[i].clear();
                 this.challengesimulated[i] = new Array(256).fill(null);
+                this.rankchallengesimulated[i] = new Array(256).fill(null);
             }
         },
         addcheckpoint() {
@@ -824,29 +826,23 @@ Vue.createApp({
         },
         simulatechallenges(challengeid, challengebonusescandidates, rank) {
             setTimeout(() => {
-                if (this.challengesimulated[this.nig.world][challengeid] !== null) return;
+                let sim = rank ? this.rankchallengesimulated : this.challengesimulated;
+                if (sim[this.nig.world][challengeid] !== null) return;
                 let nig = new Nig();
                 nig.loadplayerb(btoa(JSON.stringify(this.nig.player)));
                 nig.memory = this.nig.memory;
-                if (rank) {
-                    this.rankchallengesimulated[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates, rank);
-                } else {
-                    this.challengesimulated[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates, rank);
-                }
+                sim[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates, rank);
             }, 0);
         },
         simulatechallengesrec(challengeid, challengebonusescandidates, rank) {
             setTimeout(() => {
                 if (challengeid >= 256) return;
-                if (this.challengesimulated[this.nig.world][challengeid] === null) {
+                let sim = rank ? this.rankchallengesimulated : this.challengesimulated;
+                if (sim[this.nig.world][challengeid] === null) {
                     let nig = new Nig();
                     nig.loadplayerb(btoa(JSON.stringify(this.nig.player)));
                     nig.memory = this.nig.memory;
-                    if (rank) {
-                        this.rankchallengesimulated[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates, rank);
-                    } else {
-                        this.challengesimulated[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates, rank);
-                    }
+                    sim[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates, rank);
                 }
                 this.simulatechallengesrec(challengeid + 1, challengebonusescandidates, rank);
             }, 0);
