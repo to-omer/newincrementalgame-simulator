@@ -109,6 +109,9 @@ class Nig {
         this.challengedata = {
             rewardcost: [1, 2, 4, 8, 8, 8, 16, 16, 16, 16, 32, 32, 32, 32, 32]
         };
+        this.levelshopdata = {
+            itemcost: [new Decimal('1e3'), new Decimal('1e5')]
+        }
         this.memory = 0;
         this.worldopened = new Array(10).fill(null).map(() => false);
         this.world = 0;
@@ -157,7 +160,7 @@ class Nig {
 
             levelitems: playerData.levelitems ?? [0, 0],
         };
-        this.activechallengebonuses = !this.player.onchallenge || this.player.challengebonuses.includes(4) ? this.player.challengebonuses : [];
+        this.checkactivechallengebonuses();
         this.calcaccost();
         this.checktrophies();
         this.checkmemories();
@@ -272,6 +275,8 @@ class Nig {
     };
     buyAccelerator(index) {
         if (this.player.onchallenge && this.player.challenges.includes(5)) return false;
+        if (index >= 1 && this.player.levelresettime.lessThanOrEqualTo(0)) return false;
+        if (index >= 2 && this.players.levelitems[1] + 1 < index) return false;
         if (this.player.money.greaterThanOrEqualTo(this.player.acceleratorsCost[index])) {
             this.player.money = this.player.money.sub(this.player.acceleratorsCost[index]);
             this.player.accelerators[index] = this.player.accelerators[index].add(1);
@@ -290,6 +295,21 @@ class Nig {
             }
             this.player.challengebonuses.push(index);
             this.player.token -= this.challengedata.rewardcost[index];
+        }
+    };
+    buylevelitems(index) {
+        let cost = this.levelshopdata.itemcost[index].pow(this.player.levelitems[index] + 1)
+        if (this.player.level.lessThan(cost) || this.player.levelitems[index] >= 5) {
+            return;
+        }
+        this.player.level = this.player.level.sub(cost);
+        this.player.levelitems[index] = this.player.levelitems[index] + 1;
+    };
+    changeMode(index) {
+        if (this.player.onchallenge && this.player.challenges.includes(3)) return;
+        this.player.generatorsMode[index] += 1;
+        if (this.player.generatorsMode[index] > index) {
+            this.player.generatorsMode[index] = 0;
         }
     };
 
@@ -387,6 +407,28 @@ class Nig {
     };
 
     // ================================================================================
+
+    checkactivechallengebonuses() {
+        this.activechallengebonuses = !this.player.onchallenge || this.player.challengebonuses.includes(4) ? this.player.challengebonuses : [];
+    };
+    generatorBuyable(index) {
+        if (this.player.onchallenge && this.player.challenges.includes(6)) {
+            if (index > 2) {
+                return false;
+            }
+        }
+        return this.player.money.greaterThanOrEqualTo(this.player.generatorsCost[index]);
+    };
+    acceleratorBuyable(index) {
+        if (this.player.onchallenge && this.player.challenges.includes(5)) return false;
+        if (index >= 1 && this.player.levelresettime.lessThanOrEqualTo(0)) return false;
+        if (index >= 2 && this.player.levelitems[1] + 1 < index) return false;
+        return this.player.money.greaterThanOrEqualTo(this.player.acceleratorsCost[index]);
+    };
+    levelitemBuyable(index) {
+        let cost = this.levelshopdata.itemcost[index].pow(this.player.levelitems[index] + 1)
+        return !(this.player.level.lessThan(cost) || this.player.levelitems[index] >= 5);
+    }
 
     multmatrix() {
         let multmat = matrix_eye(9);
@@ -646,7 +688,7 @@ class Nig {
             this.buyRewards(4);
             this.buyRewards(1);
             this.buyRewards(0);
-            this.activechallengebonuses = (this.player.challengebonuses.includes(4) || !this.player.onchallenge) ? this.player.challengebonuses : [];
+            this.checkactivechallengebonuses();
 
             for (let i = 0; i < 8; i++) {
                 if (challengeid & (1 << 7 - i)) {
@@ -658,7 +700,7 @@ class Nig {
             if (this.player.challengebonuses.includes(0)) this.buyRewards(0);
 
             challengebonuses.forEach(c => this.buyRewards(c));
-            this.activechallengebonuses = (this.player.challengebonuses.includes(4) || !this.player.onchallenge) ? this.player.challengebonuses : [];
+            this.checkactivechallengebonuses();
 
             let checkpoints = [new Decimal(this.player.challenges.includes(0) ? (rank ? '1e96' : '1e24') : (rank ? '1e72' : '1e18'))];
             let res = this.simulate(checkpoints)[0];
@@ -708,6 +750,7 @@ Vue.createApp({
             hidechallengecolor: false,
             hideclearedrankchallenge: false,
             hiderankchallengecolor: false,
+            autosimulatecheckpoints: false,
             checkpointtarget: '',
             checkpointvalue: '',
         }
@@ -785,16 +828,47 @@ Vue.createApp({
             let nig = new Nig();
             nig.loadb(input);
             this.nig = nig;
-            this.clearAllCache();
+            for (let i = 0; i < 10; i++) {
+                this.simulatedcheckpoints[i].clear();
+                this.challengesimulated[i] = new Array(256).fill(null);
+                this.rankchallengesimulated[i] = new Array(256).fill(null);
+            }
             this.selectWorld(prevworld);
         },
         selectWorld(i) {
             this.nig.moveworld(i);
+            if (this.autosimulatecheckpoints) this.simulatecheckpoints();
         },
-        clearCurrentCache() {
-            this.simulatedcheckpoints[this.nig.world].clear();
-            this.challengesimulated[this.nig.world] = new Array(256).fill(null);
-            this.rankchallengesimulated[this.nig.world] = new Array(256).fill(null);
+        buyGenerator(i) {
+            this.nig.buyGenerator(i)
+            this.clearCheckpointsCache();
+        },
+        buyAccelerator(i) {
+            this.nig.buyAccelerator(i)
+            this.clearCheckpointsCache();
+        },
+        buyRewards(i) {
+            this.nig.buyRewards(i)
+            this.nig.checkactivechallengebonuses();
+            this.clearCheckpointsCache();
+        },
+        buyLevelitems(i) {
+            this.nig.buylevelitems(i);
+            this.clearAllCache();
+        },
+        toggleChallenge() {
+            if (this.nig.player.onchallenge) {
+                this.nig.exitChallenge();
+            } else {
+                this.nig.startChallenge();
+            }
+            this.clearCheckpointsCache();
+        },
+        clearCheckpointsCache() {
+            for (let i = 0; i < 10; i++) {
+                this.simulatedcheckpoints[this.nig.world].clear();
+            }
+            if (this.autosimulatecheckpoints) this.simulatecheckpoints();
         },
         clearAllCache() {
             for (let i = 0; i < 10; i++) {
@@ -802,6 +876,7 @@ Vue.createApp({
                 this.challengesimulated[i] = new Array(256).fill(null);
                 this.rankchallengesimulated[i] = new Array(256).fill(null);
             }
+            if (this.autosimulatecheckpoints) this.simulatecheckpoints();
         },
         addcheckpoint() {
             if (this.tmoney.gt(0)) this.checkpoints.push(this.tmoney);
@@ -865,6 +940,12 @@ Vue.createApp({
                 '-webkit-transform': ' translateX(-50%)',
                 '-ms-transform': ' translateX(-50%)',
             }
+        },
+        buttonselectedcls(cond) {
+            return {
+                'btn-dark': cond,
+                'btn-outline-dark': !cond,
+            };
         },
     },
 }).mount('#app');

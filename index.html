@@ -73,39 +73,84 @@
       </div>
     </div>
 
-    <div class="collapse card-group" id="gabought">
-      <div class="card">
-        <ul class="list-group list-group-flush">
-          <li v-for="i in 8" :key="i" class="list-group-item">
-            発生器{{ i }}: {{ nig.player.generators[i-1].toExponential(3) }} 購入数: {{
-            nig.player.generatorsBought[i-1].toNumber() }}
-          </li>
-        </ul>
-      </div>
-      <div class="card">
-        <ul class="list-group list-group-flush">
-          <li v-for="i in 8" :key="i" class="list-group-item">
-            <span v-if="i==1||nig.player.levelresettime.gt(0)&&(i==2||nig.player.levelitems[1]>i-3)">
-              時間加速器{{ i }}: {{ nig.player.accelerators[i-1].toExponential(3) }} 購入数: {{
-              nig.player.acceleratorsBought[i-1].toNumber() }}
-            </span>
-            <span v-else>{{ '　' }}</span>
-          </li>
-        </ul>
-      </div>
+    <div class="collapse" id="gabought">
+      <table class="table table-bordered table-sm text-center" style="margin-bottom: 0px;">
+        <thead>
+          <tr>
+            <td class="align-middle" rowspan="2"></td>
+            <td class="align-middle" colspan="4">発生器</td>
+            <td class="align-middle" colspan="3">時間加速器</td>
+          </tr>
+          <tr>
+            <td class="align-middle">所持数</td>
+            <td class="align-middle">購入コスト</td>
+            <td class="align-middle">購入数</td>
+            <td class="align-middle">モード</td>
+            <td class="align-middle">所持数</td>
+            <td class="align-middle">購入コスト</td>
+            <td class="align-middle">購入数</td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="i in 8" :key="i">
+            <td class="align-middle">{{ i }}</td>
+            <td class="align-middle">{{ nig.player.generators[i-1].toExponential(3) }}</td>
+            <td class="d-grid">
+              <button type="button" class="btn btn-outline-dark btn-sm" @click="buyGenerator(i-1)"
+                :disabled="!nig.generatorBuyable(i-1)">
+                {{ nig.player.generatorsCost[i-1].toExponential(1) }}
+              </button>
+            </td>
+            <td class="align-middle">{{ nig.player.generatorsBought[i-1].toNumber() }}</td>
+            <td class="align-middle">{{ nig.player.generatorsMode[i-1] }}</td>
+            <td class="align-middle">{{ nig.player.accelerators[i-1].toExponential(3) }}</td>
+            <td class="d-grid">
+              <button type="button" class="btn btn-outline-dark btn-sm" @click="buyAccelerator(i-1)"
+                :disabled="!nig.acceleratorBuyable(i-1)">
+                {{ nig.player.acceleratorsCost[i-1].toExponential(1) }}
+              </button>
+            </td>
+            <td class="align-middle">{{ nig.player.acceleratorsBought[i-1].toNumber() }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <div class="collapse" id="levelInfo">
       <div class="card card-body">
-        <div>有効挑戦: {{ nig.player.onchallenge ? nig.player.challenges.map(x => x + 1) : [] }}</div>
-        <div>効力: {{ nig.activechallengebonuses.map(x => x + 1) }}</div>
+        <div>勲章: {{ nig.player.token }}</div>
+        <div>挑戦
+          <button v-for="i in 8" :key="i" type="button" class="btn" @click="nig.configchallenge(i-1)"
+            :class="buttonselectedcls(nig.player.challenges.includes(i-1))" :disabled="nig.player.onchallenge">
+            {{ i }}
+          </button>
+        </div>
+        <div>
+          <button type="button" class="btn btn-outline-dark" @click="toggleChallenge"
+            :disabled="nig.calcchallengeid()==0">
+            {{ nig.player.onchallenge ? '挑戦放棄' : '挑戦開始' }}
+          </button>
+        </div>
+        <div>効力
+          <button v-for="i in 15" :key="i" type="button" class="btn" @click="buyRewards(i-1)"
+            :class="buttonselectedcls(nig.player.challengebonuses.includes(i-1))"
+            :disabled="!nig.player.challengebonuses.includes(i-1) && nig.player.token<nig.challengedata.rewardcost[i-1]">
+            {{ i }}
+          </button>
+        </div>
       </div>
     </div>
 
     <div class="collapse" id="rankInfo">
       <div class="card card-body">
-        <div>段位効力1: {{ nig.player.levelitems[0] }}</div>
-        <div>段位効力2: {{ nig.player.levelitems[1] }}</div>
+        <div v-for="i in 2" :key="i">
+          <span>段位効力{{ i }}</span>
+          <button type="button" class="btn btn-outline-dark btn-sm" @click="buyLevelitems(i-1)"
+            :disabled="!nig.levelitemBuyable(i-1)">
+            購入コスト: {{ nig.levelshopdata.itemcost[i-1].pow(nig.player.levelitems[i-1]+1).toExponential(1) }}
+          </button>
+          <span> 所持数: {{ nig.player.levelitems[i-1] }}</span>
+        </div>
       </div>
     </div>
 
@@ -207,7 +252,11 @@
 
     <div class="collapse card" id="simulatedChkps">
       <div class="card-body">
-        <button type="button" class="btn btn-outline-dark" @click="simulatecheckpoints">シミュレート</button>
+        <div>
+          <button type="button" class="btn btn-outline-dark" @click="simulatecheckpoints">シミュレート</button>
+          <button type="button" class="btn" @click="autosimulatecheckpoints = !autosimulatecheckpoints;"
+            :class="buttonselectedcls(autosimulatecheckpoints)">自動</button>
+        </div>
         <div class="input-group">
           <select class="form-select" v-model="checkpointtarget" aria-label="checkpoint target">
             <option disabled value="">選択</option>
