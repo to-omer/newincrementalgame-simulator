@@ -143,14 +143,15 @@
 
     <div class="collapse" id="rankInfo">
       <div class="card card-body">
-        <div v-for="i in 2" :key="i">
+        <div v-for="i in 5" :key="i">
           <span>段位効力{{ i }}</span>
           <button type="button" class="btn btn-outline-dark btn-sm" @click="buyLevelitems(i-1)"
             :disabled="!nig.levelitemBuyable(i-1)">
-            購入コスト: {{ nig.levelshopdata.itemcost[i-1].pow(nig.player.levelitems[i-1]+1).toExponential(1) }}
+            購入コスト: {{ nig.calclevelitemcost(i-1).toExponential(1) }}
           </button>
           <span> 所持数: {{ nig.player.levelitems[i-1] }}</span>
         </div>
+        <div>累計購入回数: {{ nig.player.levelitembought }}</div>
       </div>
     </div>
 
