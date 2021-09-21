@@ -508,20 +508,6 @@ class Nig {
         return b;
     }
 
-    serchlowerbound(value, l) {
-        if (this.calcgainlevel(l).gte(value)) return l;
-        let r = l.mul(l);
-        while (this.calcgainlevel(r).lt(value)) r = r.mul(r);
-        while (r.sub(l).div(l).gt(0.000001)) {
-            let m = l.mul(r).sqrt();
-            if (this.calcgainlevel(m).gte(value))
-                r = m;
-            else
-                l = m;
-        }
-        return r;
-    }
-
     targetmoney(target, input) {
         try {
             let value = new Decimal(input);
@@ -532,8 +518,18 @@ class Nig {
             }
             const hasc0 = this.player.onchallenge && this.player.challenges.includes(0);
             if (target == 'levelreset') {
-                return this.serchlowerbound(value, new Decimal(hasc0 ? '1e24' : '1e18'));
+                value = value.ceil();
+                const dividing = new Decimal(Math.max(1, 19 - this.player.rank.add(2).log2()));
+                const glmin = new Decimal(18).div(dividing).pow_base(2);
+                const glmax = this.player.maxlevelgained.div(2);
+                const diff = glmax.sub(glmin);
+                let g = value.sub(0.5);
+                if (!(glmin.add(0.1).greaterThanOrEqualTo(glmax)) && value.sub(0.5).lt(glmax)) {
+                    g = glmax.sub(diff.mul(glmax.sub(value.sub(0.5)).div(diff).pow(1 / (1 + this.player.levelitems[0]))));
+                }
+                return dividing.mul(g.log2()).pow_base(10).max(new Decimal(hasc0 ? '1e24' : '1e18'));
             } else if (target == 'rankreset') {
+                value = value.ceil();
                 return new Decimal(value.sub(0.5).log2()).mul(36 - 1.2 * this.player.levelitems[4]).pow_base(10).max(new Decimal(hasc0 ? '1e96' : '1e72'));
             } else if (target == 'input') {
                 return value;
