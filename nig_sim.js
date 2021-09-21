@@ -969,6 +969,7 @@ Vue.createApp({
         },
         simulatechallengeone(i, j, rank) {
             const id = this.challengeid(i, j);
+            if (id <= 0 || 256 <= id) return;
             const challengebonusescandidates = this.nig.maximumbonuses();
             this.simulatechallenges(id, challengebonusescandidates, rank);
         },

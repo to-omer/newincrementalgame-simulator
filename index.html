@@ -189,7 +189,7 @@
                 <div class="chalcell" v-bind:class="challengecell(i-1,j-1)"
                   @click="simulatechallengeone(i-1,j-1,false)">
                   <div class="chalcolor" v-bind:style="challengescolor(i-1,j-1)"></div>
-                  <span class="chaltooltip" v-html="challengemessage(i-1,j-1)"></span>
+                  <span class="chaltooltip" v-if="i>1||j>1" v-html="challengemessage(i-1,j-1)"></span>
                 </div>
               </td>
             </tr>
@@ -238,7 +238,7 @@
                 <div class="chalcell" v-bind:class="challengecell(i-1,j-1,true)"
                   @click="simulatechallengeone(i-1,j-1,true)">
                   <div class="chalcolor" v-bind:style="challengescolor(i-1,j-1,true)"></div>
-                  <span class="chaltooltip" v-html="challengemessage(i-1,j-1,true)"></span>
+                  <span class="chaltooltip" v-if="i>1||j>1" v-html="challengemessage(i-1,j-1,true)"></span>
                 </div>
               </td>
             </tr>
