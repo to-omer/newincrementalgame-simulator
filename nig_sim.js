@@ -278,7 +278,7 @@ class Nig {
     buyAccelerator(index) {
         if (this.player.onchallenge && this.player.challenges.includes(5)) return false;
         if (index >= 1 && this.player.levelresettime.lessThanOrEqualTo(0)) return false;
-        if (index >= 2 && this.players.levelitems[3] + 1 < index) return false;
+        if (index >= 2 && this.player.levelitems[3] + 1 < index) return false;
         if (this.player.money.greaterThanOrEqualTo(this.player.acceleratorsCost[index])) {
             this.player.money = this.player.money.sub(this.player.acceleratorsCost[index]);
             this.player.accelerators[index] = this.player.accelerators[index].add(1);
