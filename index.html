@@ -266,7 +266,8 @@
             <option value="input">入力</option>
           </select>
           <span class="input-group-text" v-if="checkpointtarget=='levelreset' || checkpointtarget=='rankreset'">で</span>
-          <input type="text" class="form-control" v-model="checkpointvalue" aria-label="Text input">
+          <input type="text" class="form-control" v-model="checkpointvalue" aria-label="Text input"
+            @keydown="(event)=>{if(event.key==='Enter')addcheckpoint()}">
           <span class="input-group-text" v-if="checkpointtarget=='levelreset' || checkpointtarget=='rankreset'">
             {{ checkpointtarget=='levelreset' ? '段位' : '階位' }}獲得する
           </span>
