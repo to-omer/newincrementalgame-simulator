@@ -280,7 +280,7 @@
             {{ simulatedcheckpoints[nig.world].has(chkp) ? simulatedcheckpoints[nig.world].get(chkp) :
             chkp.toExponential(3) + " ポイントまで ???" }}
           </span>
-          <button type="button" class="btn-close float-end" @click="removecheckpoint"></button>
+          <button type="button" class="btn-close float-end" @click="removecheckpoint(i)"></button>
         </li>
       </ul>
     </div>
