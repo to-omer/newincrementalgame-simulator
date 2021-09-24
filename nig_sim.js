@@ -463,6 +463,12 @@ class Nig {
         let cost = this.calclevelitemcost(index);
         return !(this.player.level.lessThan(cost) || this.player.levelitems[index] >= 5);
     };
+    generatorModeChangeable() {
+        return !(this.player.onchallenge && this.player.challenges.includes(3)) && !this.activechallengebonuses.includes(13);
+    };
+    resetGeneratorMode() {
+        if (this.generatorModeChangeable()) this.player.generatorsMode = new Array(8).fill(null).map((_, i) => i);
+    };
 
     multmatrix() {
         let multmat = matrix_eye(9);
@@ -900,6 +906,14 @@ Vue.createApp({
         buyLevelitems(i) {
             this.nig.buylevelitems(i);
             this.clearAllCache();
+        },
+        changeMode(i) {
+            this.nig.changeMode(i);
+            this.clearCheckpointsCache();
+        },
+        resetGeneratorMode(i) {
+            this.nig.resetGeneratorMode(i);
+            this.clearCheckpointsCache();
         },
         toggleChallenge() {
             if (this.nig.player.onchallenge) {

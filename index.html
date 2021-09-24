@@ -85,7 +85,12 @@
             <td class="align-middle">所持数</td>
             <td class="align-middle">購入コスト</td>
             <td class="align-middle">購入数</td>
-            <td class="align-middle">モード</td>
+            <td class="d-grid">
+              <button type="button" class="btn btn-outline-dark btn-sm" @click="resetGeneratorMode()"
+                :disabled="!nig.generatorModeChangeable() || nig.player.generatorsMode.every((m, i) => m == i)">
+                モード
+              </button>
+            </td>
             <td class="align-middle">所持数</td>
             <td class="align-middle">購入コスト</td>
             <td class="align-middle">購入数</td>
@@ -102,7 +107,12 @@
               </button>
             </td>
             <td class="align-middle">{{ nig.player.generatorsBought[i-1].toNumber() }}</td>
-            <td class="align-middle">{{ nig.player.generatorsMode[i-1] }}</td>
+            <td class="d-grid">
+              <button type="button" class="btn btn-outline-dark btn-sm" @click="changeMode(i-1)"
+                :disabled="!nig.generatorModeChangeable()">
+                {{ nig.player.generatorsMode[i-1] }}
+              </button>
+            </td>
             <td class="align-middle">{{ nig.player.accelerators[i-1].toExponential(3) }}</td>
             <td class="d-grid">
               <button type="button" class="btn btn-outline-dark btn-sm" @click="buyAccelerator(i-1)"
