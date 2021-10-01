@@ -128,7 +128,6 @@
 
     <div class="collapse" id="levelInfo">
       <div class="card card-body">
-        <div>勲章: {{ nig.player.token }}</div>
         <div>挑戦
           <button v-for="i in 8" :key="i" type="button" class="btn" @click="nig.configchallenge(i-1)"
             :class="buttonselectedcls(nig.player.challenges.includes(i-1))" :disabled="nig.player.onchallenge">
@@ -141,10 +140,19 @@
             {{ nig.player.onchallenge ? '挑戦放棄' : '挑戦開始' }}
           </button>
         </div>
+        <div>勲章: {{ nig.player.token }}</div>
         <div>効力
           <button v-for="i in 15" :key="i" type="button" class="btn" @click="buyRewards(i-1)"
             :class="buttonselectedcls(nig.player.challengebonuses.includes(i-1))"
             :disabled="!nig.player.challengebonuses.includes(i-1) && nig.player.token<nig.challengedata.rewardcost[i-1]">
+            {{ i }}
+          </button>
+        </div>
+        <div>大勲章: {{ nig.player.ranktoken }}</div>
+        <div>上位効力
+          <button v-for="i in 15" :key="i" type="button" class="btn" @click="buyRankRewards(i-1)"
+            :class="buttonselectedcls(nig.player.rankchallengebonuses.includes(i-1))"
+            :disabled="!nig.player.rankchallengebonuses.includes(i-1) && nig.player.ranktoken<nig.challengedata.rewardcost[i-1]">
             {{ i }}
           </button>
         </div>

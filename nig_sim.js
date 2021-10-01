@@ -62,6 +62,7 @@ class Nig {
 
                 rank: new Decimal(0),
                 rankresettime: new Decimal(0),
+                ranktoken: 0,
 
                 generators: new Array(8).fill(null).map(() => new Decimal(0)),
                 generatorsBought: new Array(8).fill(null).map(() => new Decimal(0)),
@@ -98,6 +99,8 @@ class Nig {
                 challengebonuses: [],
 
                 rankchallengecleared: [],
+                rankchallengebonuses: [],
+
                 trophies: new Array(4).fill(null).map(() => false),
 
                 levelitems: [0, 0, 0, 0, 0],
@@ -139,6 +142,7 @@ class Nig {
 
             rank: new Decimal(playerData.rank ?? 0),
             rankresettime: new Decimal(playerData.rankresettime ?? 0),
+            ranktoken: playerData.ranktoken ?? 0,
 
             generators: playerData.generators.map(v => new Decimal(v)),
             generatorsBought: playerData.generatorsBought.map(v => new Decimal(v)),
@@ -157,6 +161,8 @@ class Nig {
             challengebonuses: playerData.challengebonuses ?? [],
 
             rankchallengecleared: playerData.rankchallengecleared ?? [],
+            rankchallengebonuses: playerData.rankchallengebonuses ?? [],
+
             trophies: new Array(4).fill(null).map(() => false),
 
             levelitems: playerData.levelitems ?? [0, 0, 0, 0, 0],
@@ -218,6 +224,9 @@ class Nig {
 
         if (this.activechallengebonuses.includes(3)) {
             mult = mult.mul(new Decimal(2));
+        }
+        if (this.player.rankchallengebonuses.includes(3)) {
+            mult = mult.mul(new Decimal(3));
         }
 
         if (i == 0 && this.activechallengebonuses.includes(7)) {
@@ -299,6 +308,18 @@ class Nig {
             this.player.token -= this.challengedata.rewardcost[index];
         }
     };
+    buyRankRewards(index) {
+        if (this.player.rankchallengebonuses.includes(index)) {
+            this.player.rankchallengebonuses.splice(this.player.rankchallengebonuses.indexOf(index), 1);
+            this.player.ranktoken += this.challengedata.rewardcost[index];
+        } else {
+            if (this.player.ranktoken < this.challengedata.rewardcost[index]) {
+                return;
+            }
+            this.player.rankchallengebonuses.push(index);
+            this.player.ranktoken -= this.challengedata.rewardcost[index];
+        }
+    };
     calclevelitemcost(index) {
         let d = index + 1;
         let cost = this.levelshopdata.itemcost[index].pow(this.player.levelitems[index] + 1);
@@ -377,6 +398,8 @@ class Nig {
 
         if (this.activechallengebonuses.includes(0)) this.player.money = new Decimal(10001);
         if (this.activechallengebonuses.includes(1)) this.player.accelerators[0] = new Decimal(10);
+        if (this.player.rankchallengebonuses.includes(0)) this.player.money = new Decimal("1e9");
+        if (this.player.rankchallengebonuses.includes(1)) this.player.accelerators[0] = this.player.accelerators[0].add(256);
     };
 
     calcchallengeid() {
@@ -436,6 +459,7 @@ class Nig {
         for (let i = 0; i < 10; i++) {
             if (this.players[i].challengecleared.includes(238)) this.worldopened[1] = true;
             if (this.players[i].challengecleared.length >= 100) this.worldopened[2] = true;
+            if (this.players[i].rankchallengecleared.length >= 16) this.worldopened[3] = true;
         }
     };
 
