@@ -915,16 +915,20 @@ Vue.createApp({
             if (this.autosimulatecheckpoints) this.simulatecheckpoints();
         },
         buyGenerator(i) {
-            this.nig.buyGenerator(i)
+            this.nig.buyGenerator(i);
             this.clearCheckpointsCache();
         },
         buyAccelerator(i) {
-            this.nig.buyAccelerator(i)
+            this.nig.buyAccelerator(i);
             this.clearCheckpointsCache();
         },
         buyRewards(i) {
-            this.nig.buyRewards(i)
+            this.nig.buyRewards(i);
             this.nig.checkactivechallengebonuses();
+            this.clearCheckpointsCache();
+        },
+        buyRankRewards(i) {
+            this.nig.buyRankRewards(i);
             this.clearCheckpointsCache();
         },
         buyLevelitems(i) {
