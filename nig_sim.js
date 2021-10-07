@@ -274,7 +274,7 @@ class Nig {
 
     buyGenerator(index) {
         if (this.player.onchallenge && this.player.challenges.includes(6)) {
-            if (index > 2) {
+            if (index == 3 || index == 7) {
                 return false;
             }
         }
@@ -477,7 +477,7 @@ class Nig {
     };
     generatorBuyable(index) {
         if (this.player.onchallenge && this.player.challenges.includes(6)) {
-            if (index > 2) {
+            if (index == 3 || index == 7) {
                 return false;
             }
         }
@@ -665,7 +665,7 @@ class Nig {
             maxchp = maxchp.max(checkpoints[i]);
         }
         for (let i = 0; i < 8; i++) {
-            if (!(this.player.onchallenge && this.player.challenges.includes(6) && i > 2)) {
+            if (!(this.player.onchallenge && this.player.challenges.includes(6) && (i == 3 || i == 7))) {
                 for (let j = this.player.generatorsBought[i]; ; j = j.add(1)) {
                     let c = this.calcgeneratorcost(i, j);
                     if (c.gte(maxchp)) break;
