@@ -405,7 +405,7 @@ class Nig {
 
         if (this.activechallengebonuses.includes(0)) this.player.money = new Decimal(10001);
         if (this.activechallengebonuses.includes(1)) this.player.accelerators[0] = new Decimal(10);
-        if (this.player.rankchallengebonuses.includes(0)) this.player.money = new Decimal("1e9");
+        if (this.player.rankchallengebonuses.includes(0)) this.player.money = this.player.money.add(new Decimal("1e9"));
         if (this.player.rankchallengebonuses.includes(1)) this.player.accelerators[0] = this.player.accelerators[0].add(256);
     };
 
