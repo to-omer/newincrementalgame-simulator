@@ -87,7 +87,7 @@
             <td class="align-middle">購入数</td>
             <td class="d-grid">
               <button type="button" class="btn btn-outline-dark btn-sm" @click="resetGeneratorMode()"
-                :disabled="!nig.generatorModeChangeable() || nig.player.generatorsMode.every((m, i) => m == i)">
+                :disabled="!nig.isGeneratorModeChangeable() || nig.player.generatorsMode.every((m, i) => m == i)">
                 モード
               </button>
             </td>
@@ -102,21 +102,21 @@
             <td class="align-middle">{{ nig.player.generators[i-1].toExponential(3) }}</td>
             <td class="d-grid">
               <button type="button" class="btn btn-outline-dark btn-sm" @click="buyGenerator(i-1)"
-                :disabled="!nig.generatorBuyable(i-1)">
+                :disabled="!nig.isGeneratorBuyable(i-1)">
                 {{ nig.player.generatorsCost[i-1].toExponential(1) }}
               </button>
             </td>
             <td class="align-middle">{{ nig.player.generatorsBought[i-1].toNumber() }}</td>
             <td class="d-grid">
               <button type="button" class="btn btn-outline-dark btn-sm" @click="changeMode(i-1)"
-                :disabled="!nig.generatorModeChangeable()">
+                :disabled="!nig.isGeneratorModeChangeable()">
                 {{ nig.player.generatorsMode[i-1] }}
               </button>
             </td>
             <td class="align-middle">{{ nig.player.accelerators[i-1].toExponential(3) }}</td>
             <td class="d-grid">
               <button type="button" class="btn btn-outline-dark btn-sm" @click="buyAccelerator(i-1)"
-                :disabled="!nig.acceleratorBuyable(i-1)">
+                :disabled="!nig.isAcceleratorBuyable(i-1)">
                 {{ nig.player.acceleratorsCost[i-1].toExponential(1) }}
               </button>
             </td>
@@ -129,30 +129,29 @@
     <div class="collapse" id="levelInfo">
       <div class="card card-body">
         <div>挑戦
-          <button v-for="i in 8" :key="i" type="button" class="btn" @click="nig.configchallenge(i-1)"
-            :class="buttonselectedcls(nig.player.challenges.includes(i-1))" :disabled="nig.player.onchallenge">
+          <button v-for="i in 8" :key="i" type="button" class="btn" @click="nig.configChallenge(i-1)"
+            :class="buttonselectedcls(nig.player.challenges[i-1])" :disabled="nig.player.onchallenge">
             {{ i }}
           </button>
         </div>
         <div>
           <button type="button" class="btn btn-outline-dark" @click="toggleChallenge"
-            :disabled="nig.calcchallengeid()==0">
+            :disabled="nig.calcChallengeId()==0">
             {{ nig.player.onchallenge ? '挑戦放棄' : '挑戦開始' }}
           </button>
         </div>
         <div>勲章: {{ nig.player.token }}</div>
         <div>効力
-          <button v-for="i in 15" :key="i" type="button" class="btn" @click="buyRewards(i-1)"
-            :class="buttonselectedcls(nig.player.challengebonuses.includes(i-1))"
-            :disabled="!nig.player.challengebonuses.includes(i-1) && nig.player.token<nig.challengedata.rewardcost[i-1]">
+          <button v-for="i in 15" :key="i" type="button" class="btn" @click="toggleReward(i-1)"
+            :class="buttonselectedcls(nig.player.challengebonuses[i-1])" :disabled="!nig.isRewardToggleable(i-1)">
             {{ i }}
           </button>
         </div>
         <div>大勲章: {{ nig.player.ranktoken }}</div>
         <div>上位効力
-          <button v-for="i in 15" :key="i" type="button" class="btn" @click="buyRankRewards(i-1)"
-            :class="buttonselectedcls(nig.player.rankchallengebonuses.includes(i-1))"
-            :disabled="!nig.player.rankchallengebonuses.includes(i-1) && nig.player.ranktoken<nig.challengedata.rewardcost[i-1]">
+          <button v-for="i in 15" :key="i" type="button" class="btn" @click="toggleRankReward(i-1)"
+            :class="buttonselectedcls(nig.player.rankchallengebonuses[i-1])"
+            :disabled="!nig.isRankRewardToggleable(i-1)">
             {{ i }}
           </button>
         </div>
@@ -164,8 +163,8 @@
         <div v-for="i in 5" :key="i">
           <span>段位効力{{ i }}</span>
           <button type="button" class="btn btn-outline-dark btn-sm" @click="buyLevelitems(i-1)"
-            :disabled="!nig.levelitemBuyable(i-1)">
-            購入コスト: {{ nig.calclevelitemcost(i-1).toExponential(1) }}
+            :disabled="!nig.isLevelitemBuyable(i-1)">
+            購入コスト: {{ nig.calcLevelitemCost(i-1).toExponential(1) }}
           </button>
           <span> 所持数: {{ nig.player.levelitems[i-1] }}</span>
         </div>

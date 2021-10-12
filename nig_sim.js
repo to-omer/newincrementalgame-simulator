@@ -1,52 +1,14 @@
-const matrix_mul_lowertri = (a, b) => {
-    let c = Array.from(new Array(a.length), () => new Array(b[0].length).fill(new Decimal(0)));
-    for (let i = 0; i < a.length; i++) {
-        for (let j = 0; j <= i; j++) {
-            for (let k = j; k <= i; k++) {
-                c[i][j] = c[i][j].add(a[i][k].mul(b[k][j]));
-            }
+const D = (value) => new Decimal(value);
+const numarr2boolarr = (numarr, length) => {
+    let boolarr = new Array(length).fill(false);
+    numarr.forEach((n, i) => {
+        if (typeof n == 'boolean') {
+            boolarr[i] = n;
+        } else {
+            boolarr[n] = true;
         }
-    }
-    return c;
-};
-const vec_mul_matrix_lowertri = (a, b) => {
-    let c = new Array(b[0].length).fill(new Decimal(0));
-    for (let j = 0; j < b[0].length; j++) {
-        for (let k = j; k < b.length; k++) {
-            c[j] = c[j].add(a[k].mul(b[k][j]));
-        }
-    }
-    return c;
-};
-const vec_mul_matrix_lowertri00 = (a, b) => {
-    let c = new Decimal(0);
-    for (let k = 0; k < b.length; k++) {
-        c = c.add(a[k].mul(b[k][0]));
-    }
-    return c;
-};
-const matrix_eye = (n) => {
-    let a = Array.from(new Array(n), () => new Array(n).fill(new Decimal(0)));
-    for (let i = 0; i < n; i++) {
-        a[i][i] = new Decimal(1);
-    }
-    return a;
-};
-const matrix_pow_lowertri = (a, n) => {
-    let res = matrix_eye(a.length);
-    const matrix_pow_inner = (b, m) => {
-        const m2 = m.add(m);
-        if (m2.lte(n)) {
-            const b2 = matrix_mul_lowertri(b, b);
-            matrix_pow_inner(b2, m2);
-        }
-        if (m.lte(n)) {
-            n = n.sub(m);
-            res = matrix_mul_lowertri(res, b);
-        }
-    };
-    matrix_pow_inner(a, new Decimal(1));
-    return res;
+    });
+    return boolarr;
 };
 
 class Nig {
@@ -64,52 +26,33 @@ class Nig {
                 rankresettime: new Decimal(0),
                 ranktoken: 0,
 
-                generators: new Array(8).fill(null).map(() => new Decimal(0)),
-                generatorsBought: new Array(8).fill(null).map(() => new Decimal(0)),
-                generatorsCost: [
-                    new Decimal(1),
-                    new Decimal('1e4'),
-                    new Decimal('1e9'),
-                    new Decimal('1e16'),
-                    new Decimal('1e25'),
-                    new Decimal('1e36'),
-                    new Decimal('1e49'),
-                    new Decimal('1e64')
-                ],
-                generatorsMode: new Array(8).fill(null).map((_, i) => i),
+                generators: new Array(8).fill(new Decimal(0)),
+                generatorsBought: new Array(8).fill(new Decimal(0)),
+                generatorsCost: [new Decimal(1), new Decimal('1e4'), new Decimal('1e9'), new Decimal('1e16'), new Decimal('1e25'), new Decimal('1e36'), new Decimal('1e49'), new Decimal('1e64')],
+                generatorsMode: new Array(8).fill().map((_, i) => i),
 
-                accelerators: new Array(8).fill(null).map(() => new Decimal(0)),
-                acceleratorsBought: new Array(8).fill(null).map(() => new Decimal(0)),
-                acceleratorsCost: [
-                    new Decimal(10),
-                    new Decimal('1e10'),
-                    new Decimal('1e20'),
-                    new Decimal('1e40'),
-                    new Decimal('1e80'),
-                    new Decimal('1e160'),
-                    new Decimal('1e320'),
-                    new Decimal('1e640'),
-                ],
+                accelerators: new Array(8).fill(new Decimal(0)),
+                acceleratorsBought: new Array(8).fill(new Decimal(0)),
+                acceleratorsCost: [new Decimal(10), new Decimal('1e10'), new Decimal('1e20'), new Decimal('1e40'), new Decimal('1e80'), new Decimal('1e160'), new Decimal('1e320'), new Decimal('1e640')],
 
                 tickspeed: 1000,
 
                 onchallenge: false,
-                challenges: [],
+                challenges: new Array(8).fill(false),
                 challengecleared: [],
-                challengebonuses: [],
+                challengebonuses: new Array(15).fill(false),
 
                 rankchallengecleared: [],
-                rankchallengebonuses: [],
+                rankchallengebonuses: new Array(15).fill(false),
 
-                trophies: new Array(4).fill(null).map(() => false),
+                trophies: new Array(8).fill(false),
 
-                levelitems: [0, 0, 0, 0, 0],
+                levelitems: new Array(5).fill(0),
                 levelitembought: 0,
             };
         };
         this.player = initialData();
-        this.players = new Array(10).fill(null).map(() => initialData());
-        this.activechallengebonuses = [];
+        this.players = new Array(10).fill().map(() => initialData());
         this.challengedata = {
             rewardcost: [1, 2, 4, 8, 8, 8, 16, 16, 16, 16, 32, 32, 32, 32, 32]
         };
@@ -117,21 +60,21 @@ class Nig {
             itemcost: [new Decimal('1e1'), new Decimal('1e2'), new Decimal('1e3'), new Decimal('1e4'), new Decimal('1e5')]
         }
         this.memory = 0;
-        this.worldopened = new Array(10).fill(null).map(() => false);
+        this.worldopened = new Array(10).fill().map(() => false);
         this.world = 0;
     };
 
     loadb(worldDatab) {
         this.players = JSON.parse(atob(worldDatab));
-        this.loadplayer(this.players[this.world]);
+        this.loadPlayer(this.players[this.world]);
     }
 
-    loadplayerb(playerDatab) {
+    loadPlayerb(playerDatab) {
         let saveData = JSON.parse(atob(playerDatab));
-        this.loadplayer(saveData);
+        this.loadPlayer(saveData);
     }
 
-    loadplayer(playerData) {
+    loadPlayer(playerData) {
         this.player = {
             money: new Decimal(playerData.money),
             level: new Decimal(playerData.level),
@@ -144,35 +87,33 @@ class Nig {
             rankresettime: new Decimal(playerData.rankresettime ?? 0),
             ranktoken: playerData.ranktoken ?? 0,
 
-            generators: playerData.generators.map(v => new Decimal(v)),
-            generatorsBought: playerData.generatorsBought.map(v => new Decimal(v)),
-            generatorsCost: playerData.generatorsCost.map(v => new Decimal(v)),
+            generators: playerData.generators.map(D),
+            generatorsBought: playerData.generatorsBought.map(D),
+            generatorsCost: playerData.generatorsCost.map(D),
             generatorsMode: playerData.generatorsMode.map(v => parseInt(v)),
 
-            accelerators: playerData.accelerators.map(v => new Decimal(v)),
-            acceleratorsBought: playerData.acceleratorsBought.map(v => new Decimal(v)),
-            acceleratorsCost: playerData.acceleratorsCost.map(v => new Decimal(v)),
+            accelerators: playerData.accelerators.map(D),
+            acceleratorsBought: playerData.acceleratorsBought.map(D),
+            acceleratorsCost: playerData.acceleratorsCost.map(D),
 
             tickspeed: parseFloat(playerData.tickspeed),
 
             onchallenge: playerData.onchallenge ?? false,
-            challenges: playerData.challenges ?? [],
+            challenges: numarr2boolarr(playerData.challenges, 8) ?? new Array(8).fill(false),
             challengecleared: playerData.challengecleared ?? [],
-            challengebonuses: playerData.challengebonuses ?? [],
+            challengebonuses: numarr2boolarr(playerData.challengebonuses, 15) ?? new Array(15).fill(false),
 
             rankchallengecleared: playerData.rankchallengecleared ?? [],
-            rankchallengebonuses: playerData.rankchallengebonuses ?? [],
+            rankchallengebonuses: numarr2boolarr(playerData.rankchallengebonuses, 15) ?? new Array(15).fill(false),
 
-            trophies: new Array(4).fill(null).map(() => false),
+            trophies: new Array(8).fill(false),
 
-            levelitems: playerData.levelitems ?? [0, 0, 0, 0, 0],
+            levelitems: playerData.levelitems ?? new Array(5).fill(0),
             levelitembought: playerData.levelitembought ?? 0,
         };
-        this.checkactivechallengebonuses();
-        this.calcaccost();
-        this.checktrophies();
-        this.checkmemories();
-        this.checkworlds();
+        this.checkTrophies();
+        this.checkMemories();
+        this.checkWorlds();
     };
 
     softCap(num, cap) {
@@ -180,154 +121,165 @@ class Nig {
         return cap.mul(new Decimal(num.div(cap).log2()).add(1)).min(num);
     };
 
-    strongsoftcap(num, cap) {
+    strongSoftcap(num, cap) {
         if (num.lte(cap)) return num;
         return cap.mul(new Decimal(new Decimal(num.div(cap).log2()).add(1).log2()).add(1)).min(num);
     };
 
-    calcaccost() {
-        for (let i = 0; i < 8; i++) {
-            let p = this.player.acceleratorsBought[i].add(1);
-            p = p.mul(p.add(1)).div(2);
-            p = p.mul(i === 0 ? 1 : new Decimal(10).mul(new Decimal(2).pow(i - 1)));
-            this.player.acceleratorsCost[i] = p.pow_base(10);
-        }
-    };
-
-    calcincrementmult(i, to) {
+    calcIncrementMult(i, to, highest) {
         let mult = new Decimal(1);
-        if (!(this.player.onchallenge && this.player.challenges.includes(4))) {
+        if (!this.isChallengeActive(4))
             mult = mult.mul(new Decimal(10).pow((i + 1) * (i - to)));
-        }
-        if (!(this.player.onchallenge && this.player.challenges.includes(7))) {
-            let cap = new Decimal(100).mul(this.player.levelitems[2] + 1);
-            mult = mult.mul(this.softCap(this.player.levelresettime.add(1), cap));
-        }
+
+        if (!this.isChallengeActive(7))
+            mult = mult.mul(this.softCap(this.player.levelresettime.add(1), new Decimal(100).mul(this.player.levelitems[2] + 1)));
+
         mult = mult.mul(new Decimal(this.player.level.add(2).log2()).pow(i - to));
-        let highest = 0;
-        for (let j = 0; j < 8; j++) {
-            if (this.player.generators[j].gt(0)) {
-                highest = j;
-            }
-        }
 
-        if (!(this.player.onchallenge && this.player.challenges.includes(2))) {
-            let mm = this.player.generatorsBought[i];
-            if (this.activechallengebonuses.includes(11)) {
-                mm = mm.mul(new Decimal(mm.add(2).log2()).round());
-            }
-            if (i < highest && this.player.generatorsBought[i].gt(0)) {
+        if (!this.isChallengeActive(2)) {
+            if ((i < highest || this.isChallengeBonusActive(2)) && this.player.generatorsBought[i].gt(0)) {
+                let mm = this.player.generatorsBought[i];
+                if (this.isChallengeBonusActive(11)) mm = mm.mul(new Decimal(mm.add(2).log2()).round());
                 mult = mult.mul(mm);
-            } else {
-                if (this.activechallengebonuses.includes(2) && this.player.generatorsBought[i].gt(0)) {
-                    mult = mult.mul(mm);
-                }
             }
         }
 
-        if (this.activechallengebonuses.includes(3)) {
-            mult = mult.mul(new Decimal(2));
-        }
-        if (this.player.rankchallengebonuses.includes(3)) {
-            mult = mult.mul(new Decimal(3));
-        }
-
-        if (i == 0 && this.activechallengebonuses.includes(7)) {
-            if (this.player.rankchallengebonuses.includes(7)) {
-                mult = mult.mul(this.strongsoftcap(this.player.maxlevelgained, new Decimal(100000)));
-            } else {
+        if (this.isChallengeBonusActive(3)) mult = mult.mul(new Decimal(2));
+        if (this.isRankChallengeBonusActive(3)) mult = mult.mul(new Decimal(3));
+        if (i == 0 && this.isChallengeBonusActive(7)) {
+            if (this.isRankChallengeBonusActive(7))
+                mult = mult.mul(this.strongSoftcap(this.player.maxlevelgained, new Decimal(100000)));
+            else
                 mult = mult.mul(this.player.maxlevelgained.min(100000));
-            }
         }
-
         mult = mult.mul(1 + this.memory * 0.25);
-
         return mult;
     };
 
-    updategenerators(mu) {
-        let a = vec_mul_matrix_lowertri(this.amount(), matrix_pow_lowertri(this.multmatrix(), mu));
-        this.player.money = a[0];
-        for (let i = 0; i < 8; i++) {
-            this.player.generators[i] = a[i + 1];
+    calcGeneratorExpr() {
+        let highest = 0;
+        for (let i = 0; i < 8; i++) if (this.player.generators[i].gt(0)) highest = i;
+        let g = Array.from(new Array(9), (_, i) => new Array(Math.max(0, highest + 2 - i)).fill(D(0)));
+        g[0][0] = this.player.money;
+        for (let i = 0; i <= highest; i++) g[i + 1][0] = this.player.generators[i];
+        for (let i = highest + 1; i-- > 0;) {
+            if (!this.isChallengeBonusActive(13)) {
+                const to = this.player.generatorsMode[i];
+                let mult = this.calcIncrementMult(i, to, highest);
+                g[i + 1].forEach((gg, j) => g[to][j + 1] = g[to][j + 1].add(gg.mul(mult)));
+            } else if (this.isChallengeActive(3)) {
+                const to = 0;
+                let mult = this.calcIncrementMult(i, to, highest).mul(i + 1);
+                g[i + 1].forEach((gg, j) => g[to][j + 1] = g[to][j + 1].add(gg.mul(mult)));
+            } else {
+                for (let to = 0; to <= i; to++) {
+                    let mult = this.calcIncrementMult(i, to, highest);
+                    g[i + 1].forEach((gg, j) => g[to][j + 1] = g[to][j + 1].add(gg.mul(mult)));
+                }
+            }
+            while (g[i].length > 0 && g[i][g[i].length - 1].eq(0)) g[i].pop();
         }
+        return g;
+    };
+    calcAcceleratorExpr() {
+        let highest = 0;
+        for (let i = 1; i < 8; i++) if (this.player.accelerators[i].gt(0)) highest = i;
+        let a = Array.from(new Array(8), (_, i) => new Array(Math.max(0, highest + 1 - i)).fill(D(0)));
+        for (let i = 0; i <= highest; i++) a[i][0] = this.player.accelerators[i];
+        for (let i = highest + 1; i-- > 1;) {
+            let mult = this.isChallengeBonusActive(10) ? this.player.acceleratorsBought[i] : D(1);
+            a[i].forEach((aa, j) => a[i - 1][j + 1] = a[i - 1][j + 1].add(aa.mul(mult)));
+            while (a[i - 1].length > 0 && a[i - 1][a[i - 1].length - 1].eq(0)) a[i - 1].pop();
+        }
+        return a;
+    };
+    static calcAfterNtick(expr, n) {
+        let p = D(1);
+        let res = D(0);
+        for (let i = 0; i < expr.length; i++) {
+            res = res.add(expr[i].mul(p));
+            p = p.mul(n.sub(i)).div(i + 1);
+        }
+        return res;
     };
 
-    updateaccelerators(mu) {
-        let a = vec_mul_matrix_lowertri(this.accamount(), matrix_pow_lowertri(this.accmultmatrix(), mu));
-        for (let i = 0; i < 8; i++) {
-            this.player.accelerators[i] = a[i];
-        }
-        let amult = new Decimal(1);
-        if (this.activechallengebonuses.includes(6)) amult = amult.mul(this.player.acceleratorsBought[0].max(1));
-        this.player.tickspeed = (1000 - this.player.levelitems[1] * this.player.challengebonuses.length) / this.player.accelerators[0].add(10).mul(amult).log10();
+    isChallengeActive(index) {
+        return this.player.onchallenge && this.player.challenges[index]
+    };
+    isChallengeBonusActive(index) {
+        return this.player.challengebonuses[4] || !this.player.onchallenge ? this.player.challengebonuses[index] : false;
+    };
+    isRankChallengeBonusActive(index) {
+        return this.player.rankchallengebonuses[index];
     };
 
-    configchallenge(index) {
-        if (this.player.onchallenge) return;
-        if (!this.player.challenges.includes(index)) {
-            this.player.challenges.push(index);
-        } else {
-            this.player.challenges.splice(this.player.challenges.indexOf(index), 1);
-        }
+    isGeneratorBuyable(index) {
+        if (this.isChallengeActive(6)) if (index == 3 || index == 7) return false;
+        return this.player.money.gte(this.player.generatorsCost[index]);
     };
-
+    calcGeneratorCost(index, bought) {
+        const mult = bought.neq(0) && this.isChallengeActive(1) ? 2 : 1;
+        return (index === 0 ? bought : bought.add(index + 1).mul(index + 1)).mul(mult).pow_base(10);
+    };
     buyGenerator(index) {
-        if (this.player.onchallenge && this.player.challenges.includes(6)) {
-            if (index == 3 || index == 7) {
-                return false;
-            }
-        }
-        if (this.player.money.gte(this.player.generatorsCost[index])) {
-            this.player.money = this.player.money.sub(this.player.generatorsCost[index]);
-            this.player.generators[index] = this.player.generators[index].add(1);
-            this.player.generatorsBought[index] = this.player.generatorsBought[index].add(1);
-            this.player.generatorsCost[index] = index === 0 ?
-                new Decimal(10).pow(this.player.generatorsBought[0]) :
-                new Decimal(10).pow(this.player.generatorsBought[index].add(index + 1).mul(index + 1));
-            if (this.player.onchallenge && this.player.challenges.includes(1)) {
-                this.player.generatorsCost[index] = this.player.generatorsCost[index].pow(2);
-            }
-        }
+        if (!this.isGeneratorBuyable(index)) return false;
+        this.player.money = this.player.money.sub(this.player.generatorsCost[index]);
+        this.player.generators[index] = this.player.generators[index].add(1);
+        this.player.generatorsBought[index] = this.player.generatorsBought[index].add(1);
+        this.player.generatorsCost[index] = this.calcGeneratorCost(index, this.player.generatorsBought[index]);
         return true;
     };
-    buyAccelerator(index) {
-        if (this.player.onchallenge && this.player.challenges.includes(5)) return false;
+
+    isAcceleratorBuyable(index) {
+        if (this.isChallengeActive(5)) return false;
         if (index >= 1 && this.player.levelresettime.lte(0)) return false;
         if (index >= 2 && this.player.levelitems[3] + 1 < index) return false;
-        if (this.player.money.gte(this.player.acceleratorsCost[index])) {
-            this.player.money = this.player.money.sub(this.player.acceleratorsCost[index]);
-            this.player.accelerators[index] = this.player.accelerators[index].add(1);
-            this.player.acceleratorsBought[index] = this.player.acceleratorsBought[index].add(1);
-            this.calcaccost();
-        }
+        return this.player.money.gte(this.player.acceleratorsCost[index]);
+    };
+    calcAcceleratorCost(index, bought) {
+        let p = bought.add(1);
+        return p.mul(p.add(1)).div(2).mul(index === 0 ? 1 : new Decimal(10).mul(new Decimal(2).pow(index - 1))).pow_base(10);
+    };
+    buyAccelerator(index) {
+        if (!this.isAcceleratorBuyable(index)) return false;
+        this.player.money = this.player.money.sub(this.player.acceleratorsCost[index]);
+        this.player.accelerators[index] = this.player.accelerators[index].add(1);
+        this.player.acceleratorsBought[index] = this.player.acceleratorsBought[index].add(1);
+        this.player.acceleratorsCost[index] = this.calcAcceleratorCost(index, this.player.acceleratorsBought[index]);
         return true;
     };
-    buyRewards(index) {
-        if (this.player.challengebonuses.includes(index)) {
-            this.player.challengebonuses.splice(this.player.challengebonuses.indexOf(index), 1);
-            this.player.token += this.challengedata.rewardcost[index];
-        } else {
-            if (this.player.token < this.challengedata.rewardcost[index]) {
-                return;
-            }
-            this.player.challengebonuses.push(index);
-            this.player.token -= this.challengedata.rewardcost[index];
+
+    isRewardToggleable(index) {
+        return this.player.challengebonuses[index] || (this.player.token >= this.challengedata.rewardcost[index]);
+    };
+    toggleReward(index) {
+        if (this.isRewardToggleable(index)) {
+            if (this.player.challengebonuses[index])
+                this.player.token += this.challengedata.rewardcost[index];
+            else
+                this.player.token -= this.challengedata.rewardcost[index];
+            this.player.challengebonuses[index] = !this.player.challengebonuses[index];
         }
     };
-    buyRankRewards(index) {
-        if (this.player.rankchallengebonuses.includes(index)) {
-            this.player.rankchallengebonuses.splice(this.player.rankchallengebonuses.indexOf(index), 1);
-            this.player.ranktoken += this.challengedata.rewardcost[index];
-        } else {
-            if (this.player.ranktoken < this.challengedata.rewardcost[index]) {
-                return;
-            }
-            this.player.rankchallengebonuses.push(index);
-            this.player.ranktoken -= this.challengedata.rewardcost[index];
+    isRankRewardToggleable(index) {
+        return this.player.rankchallengebonuses[index] || (this.player.ranktoken >= this.challengedata.rewardcost[index]);
+    };
+    toggleRankReward(index) {
+        if (this.isRankRewardToggleable(index)) {
+            if (this.player.rankchallengebonuses[index])
+                this.player.ranktoken += this.challengedata.rewardcost[index];
+            else
+                this.player.ranktoken -= this.challengedata.rewardcost[index];
+            this.player.rankchallengebonuses[index] = !this.player.rankchallengebonuses[index];
         }
     };
-    calclevelitemcost(index) {
+
+    isLevelitemBuyable(index) {
+        if (!this.player.rankresettime.gt(0)) return false;
+        let cost = this.calcLevelitemCost(index);
+        return !(this.player.level.lt(cost) || this.player.levelitems[index] >= 5);
+    };
+    calcLevelitemCost(index) {
         let d = index + 1;
         let cost = this.levelshopdata.itemcost[index].pow(this.player.levelitems[index] + 1);
         let dec = 0;
@@ -337,29 +289,38 @@ class Nig {
         cost = cost.div(new Decimal(10).pow(dec)).max(1);
         return cost;
     };
-    buylevelitems(index) {
+    buyLevelitems(index) {
         if (!this.player.rankresettime.gt(0)) return;
-        let cost = this.calclevelitemcost(index);
-        if (this.player.level.lt(cost) || this.player.levelitems[index] >= 5) {
-            return;
-        }
+        let cost = this.calcLevelitemCost(index);
+        if (this.player.level.lt(cost) || this.player.levelitems[index] >= 5) return;
         this.player.level = this.player.level.sub(cost);
         this.player.levelitems[index] = this.player.levelitems[index] + 1;
         if (this.player.levelitembought < 100000) this.player.levelitembought = this.player.levelitembought + 1;
     };
+
+    configChallenge(index) {
+        if (this.player.onchallenge) return;
+        this.player.challenges[index] = !this.player.challenges[index];
+    };
+
+    isGeneratorModeChangeable() {
+        return !this.isChallengeActive(3) && !this.isChallengeBonusActive(13);
+    };
+    resetGeneratorMode() {
+        if (this.isGeneratorModeChangeable()) this.player.generatorsMode = new Array(8).fill().map((_, i) => i);
+    };
     changeMode(index) {
-        if (this.player.onchallenge && this.player.challenges.includes(3)) return;
+        if (this.isChallengeActive(3)) return;
         this.player.generatorsMode[index] += 1;
         if (this.player.generatorsMode[index] > index) {
             this.player.generatorsMode[index] = 0;
         }
     };
 
-    calcgainlevel(x) {
-        let money = x === undefined ? this.player.money : x;
+    calcGainLevel() {
         let dividing = 19 - this.player.rank.add(2).log2();
         if (dividing < 1) dividing = 1;
-        let gainlevel = new Decimal(money.log10()).div(dividing).pow_base(2);
+        let gainlevel = new Decimal(this.player.money.log10()).div(dividing).pow_base(2);
 
         let glmin = new Decimal(18).div(dividing).pow_base(2);
         let glmax = this.player.maxlevelgained.div(2);
@@ -373,19 +334,18 @@ class Nig {
             }
         }
         gainlevel = gainlevel.round();
-        if (this.activechallengebonuses.includes(12)) gainlevel = gainlevel.mul(new Decimal(2));
+        if (this.isChallengeBonusActive(12)) gainlevel = gainlevel.mul(new Decimal(2));
         return gainlevel;
     };
 
     resetLevel(_force, exit) {
-        let gainlevel = this.calcgainlevel();
-        let gainlevelreset = this.player.rankresettime.add(1).mul(new Decimal(exit ? 0 : this.activechallengebonuses.includes(8) ? 2 : 1));
+        let gainlevel = this.calcGainLevel();
+        let gainlevelreset = this.player.rankresettime.add(1).mul(new Decimal(exit ? 0 : this.isChallengeBonusActive(8) ? 2 : 1));
 
         if (this.player.onchallenge) {
             this.player.onchallenge = false;
             this.player.token = this.player.token + 1;
-            this.activechallengebonuses = this.player.challengebonuses;
-            this.player.challengecleared.push(this.calcchallengeid());
+            this.player.challengecleared.push(this.calcChallengeId());
         }
 
         this.player.money = new Decimal(1);
@@ -393,75 +353,63 @@ class Nig {
         this.player.levelresettime = this.player.levelresettime.add(gainlevelreset);
         this.player.maxlevelgained = this.player.maxlevelgained.max(exit ? new Decimal(0) : gainlevel);
 
-        this.player.generators = new Array(8).fill(null).map(() => new Decimal(0));
-        this.player.generatorsBought = new Array(8).fill(null).map(() => new Decimal(0));
+        this.player.generators = new Array(8).fill(new Decimal(0));
+        this.player.generatorsBought = new Array(8).fill(new Decimal(0));
         this.player.generatorsCost = [new Decimal(1), new Decimal('1e4'), new Decimal('1e9'), new Decimal('1e16'), new Decimal('1e25'), new Decimal('1e36'), new Decimal('1e49'), new Decimal('1e64')];
 
-        this.player.accelerators = new Array(8).fill(null).map(() => new Decimal(0));
-        this.player.acceleratorsBought = new Array(8).fill(null).map(() => new Decimal(0));
+        this.player.accelerators = new Array(8).fill(new Decimal(0));
+        this.player.acceleratorsBought = new Array(8).fill(new Decimal(0));
         this.player.acceleratorsCost = [new Decimal(10), new Decimal('1e10'), new Decimal('1e20'), new Decimal('1e40'), new Decimal('1e80'), new Decimal('1e160'), new Decimal('1e320'), new Decimal('1e640')];
 
         this.player.tickspeed = 1000;
 
-        if (this.activechallengebonuses.includes(0)) this.player.money = new Decimal(10001);
-        if (this.activechallengebonuses.includes(1)) this.player.accelerators[0] = new Decimal(10);
-        if (this.player.rankchallengebonuses.includes(0)) this.player.money = this.player.money.add(new Decimal("1e9"));
-        if (this.player.rankchallengebonuses.includes(1)) this.player.accelerators[0] = this.player.accelerators[0].add(256);
+        if (this.isChallengeBonusActive(0)) this.player.money = new Decimal(10001);
+        if (this.isChallengeBonusActive(1)) this.player.accelerators[0] = new Decimal(10);
+        if (this.isRankChallengeBonusActive(0)) this.player.money = this.player.money.add(new Decimal('1e9'));
+        if (this.isRankChallengeBonusActive(1)) this.player.accelerators[0] = this.player.accelerators[0].add(256);
     };
 
-    calcchallengeid() {
+    calcChallengeId() {
         let challengeid = 0;
-        for (let i = 0; i < 8; i++) {
-            challengeid *= 2;
-            if (this.player.challenges.includes(i)) {
-                challengeid += 1;
-            }
-        }
+        for (let i = 0; i < 8; i++)
+            challengeid = challengeid * 2 + (this.player.challenges[i] ? 1 : 0);
         return challengeid;
     };
 
     startChallenge() {
-        if (!this.player.challengebonuses.includes(4)) this.activechallengebonuses = [];
         this.resetLevel(true, true);
         this.player.onchallenge = true;
-        for (let i = 0; i < 8; i++) {
-            if (this.player.challenges.includes(3)) this.player.generatorsMode[i] = 0;
-        }
+        if (this.player.challenges[3])
+            this.player.generatorsMode = new Array(8).fill(0);
     };
     exitChallenge() {
         this.player.onchallenge = false;
-        this.activechallengebonuses = this.player.challengebonuses;
-        if (this.player.challenges.includes(1)) {
-            for (let i = 0; i < 8; i++) {
-                this.player.generatorsCost[i] = i === 0 ?
-                    new Decimal(10).pow(this.player.generatorsBought[0]) :
-                    new Decimal(10).pow(this.player.generatorsBought[i].add(i + 1).mul(i + 1));
-            }
+        if (this.player.challenges[1]) {
+            for (let i = 0; i < 8; i++)
+                this.player.generatorsCost[i] = this.calcGeneratorCost(i, this.player.generatorsBought[i]);
         }
     };
 
-    moveworld(i) {
+    moveWorld(i) {
         if (this.world == i || !this.worldopened[i]) return;
         this.world = i;
-        this.loadplayer(this.players[this.world]);
+        this.loadPlayer(this.players[this.world]);
     };
-    checktrophies() {
+    checkTrophies() {
         if (this.player.levelresettime.gt(0)) this.player.trophies[0] = true;
         if (this.player.rankresettime.gt(0)) this.player.trophies[1] = true;
         if (this.player.shine > 0) this.player.trophies[2] = true;
         if (this.player.challengecleared.includes(238) || this.player.challengecleared.length >= 100) this.player.trophies[3] = true;
     };
-    checkmemories() {
+    checkMemories() {
         let cnt = 0;
         for (let i = 0; i < 10; i++) {
             if (this.world == i) continue;
-            for (let j = 0; j < 4; j++) {
-                if (this.players[i].trophies[j]) cnt += 1;
-            }
+            this.players[i].trophies.forEach(t => cnt += t ? 1 : 0);
         }
         this.memory = cnt;
     };
-    checkworlds() {
+    checkWorlds() {
         this.worldopened[0] = true;
         for (let i = 0; i < 10; i++) {
             if (this.players[i].challengecleared.includes(238)) this.worldopened[1] = true;
@@ -469,81 +417,6 @@ class Nig {
             if (this.players[i].rankchallengecleared.length >= 16) this.worldopened[3] = true;
         }
     };
-
-    // ================================================================================
-
-    checkactivechallengebonuses() {
-        this.activechallengebonuses = !this.player.onchallenge || this.player.challengebonuses.includes(4) ? this.player.challengebonuses : [];
-    };
-    generatorBuyable(index) {
-        if (this.player.onchallenge && this.player.challenges.includes(6)) {
-            if (index == 3 || index == 7) {
-                return false;
-            }
-        }
-        return this.player.money.gte(this.player.generatorsCost[index]);
-    };
-    acceleratorBuyable(index) {
-        if (this.player.onchallenge && this.player.challenges.includes(5)) return false;
-        if (index >= 1 && this.player.levelresettime.lte(0)) return false;
-        if (index >= 2 && this.player.levelitems[3] + 1 < index) return false;
-        return this.player.money.gte(this.player.acceleratorsCost[index]);
-    };
-    levelitemBuyable(index) {
-        if (!this.player.rankresettime.gt(0)) return false;
-        let cost = this.calclevelitemcost(index);
-        return !(this.player.level.lt(cost) || this.player.levelitems[index] >= 5);
-    };
-    generatorModeChangeable() {
-        return !(this.player.onchallenge && this.player.challenges.includes(3)) && !this.activechallengebonuses.includes(13);
-    };
-    resetGeneratorMode() {
-        if (this.generatorModeChangeable()) this.player.generatorsMode = new Array(8).fill(null).map((_, i) => i);
-    };
-
-    multmatrix() {
-        let multmat = matrix_eye(9);
-        for (let i = 0; i < 8; i++) {
-            if (!this.activechallengebonuses.includes(13)) {
-                const to = this.player.generatorsMode[i];
-                multmat[i + 1][to] = multmat[i + 1][to].add(this.calcincrementmult(i, to));
-            } else if (this.player.onchallenge && this.player.challenges.includes(3)) {
-                multmat[i + 1][0] = multmat[i + 1][0].add(this.calcincrementmult(i, 0).mul(i + 1));
-            } else {
-                for (let to = 0; to <= i; to++) {
-                    multmat[i + 1][to] = multmat[i + 1][to].add(this.calcincrementmult(i, to));
-                }
-            }
-        }
-        return multmat;
-    }
-    amount() {
-        let b = new Array(9).fill(new Decimal(0));
-        b[0] = this.player.money;
-        for (let i = 0; i < this.player.generators.length; i++) {
-            b[i + 1] = this.player.generators[i];
-        }
-        return b;
-    }
-
-    accmultmatrix() {
-        let multmat = matrix_eye(8);
-        for (let i = 1; i < 8; i++) {
-            let mult = new Decimal(1);
-            if (this.activechallengebonuses.includes(10)) {
-                mult = mult.mul(this.player.acceleratorsBought[i]);
-            }
-            multmat[i][i - 1] = multmat[i][i - 1].add(mult);
-        }
-        return multmat;
-    }
-    accamount() {
-        let b = new Array(8).fill(new Decimal(0));
-        for (let i = 0; i < this.player.accelerators.length; i++) {
-            b[i] = this.player.accelerators[i];
-        }
-        return b;
-    }
 
     targetmoney(target, input) {
         try {
@@ -553,7 +426,7 @@ class Nig {
             } else if (target == 'rankreset') {
                 if (value.lt(4)) value = new Decimal('4');
             }
-            const hasc0 = this.player.onchallenge && this.player.challenges.includes(0);
+            const hasc0 = this.isChallengeActive(0);
             if (target == 'levelreset') {
                 value = value.ceil();
                 const dividing = new Decimal(Math.max(1, 19 - this.player.rank.add(2).log2()));
@@ -575,88 +448,81 @@ class Nig {
             return new Decimal('NaN');
         }
         return new Decimal('NaN');
-    }
+    };
 
     calcgoalticks(tmoney, update) {
-        const multmat = this.multmatrix();
-        const amount = this.amount();
-
-        if (amount[0].gte(tmoney)) return new Decimal(0);
-        if (amount.slice(1).every((a) => a.eq(0))) return new Decimal('Infinity');
-        let base = [multmat, new Decimal(1)];
-        let bases = [];
-        while (vec_mul_matrix_lowertri(amount, base[0])[0].lt(tmoney)) {
-            bases.push(base);
-            base = [matrix_mul_lowertri(base[0], base[0]), base[1].add(base[1])];
+        if (this.player.money.gte(tmoney)) return D(0);
+        if (this.player.generators.every(g => g.eq(0))) return D('Infinity');
+        const gexpr = this.calcGeneratorExpr();
+        let ok = D(2);
+        let ng = D(0);
+        while (Nig.calcAfterNtick(gexpr[0], ok).lt(tmoney)) {
+            ng = ok;
+            ok = ok.mul(ok);
         }
-        base = [amount, new Decimal(0)];
-        while (bases.length > 0) {
-            const bb = bases.pop();
-            const m = vec_mul_matrix_lowertri(base[0], bb[0]);
-            if (m[0].lt(tmoney)) {
-                base = [m, base[1].add(bb[1])];
+        let cnt = 0;
+        while (ng.add(1).lt(ok) && cnt < 60) {
+            const m = ok.sub(ng).lt(4) ? ok.add(ng).div(2).floor() : ok.mul(ng).sqrt().floor();
+            if (Nig.calcAfterNtick(gexpr[0], m).lt(tmoney)) {
+                ng = m;
+            } else {
+                ok = m;
             }
+            cnt += 1;
         }
         if (update) {
-            const a = vec_mul_matrix_lowertri(base[0], multmat);
-            this.player.money = a[0];
-            for (let i = 0; i < 8; i++) {
-                this.player.generators[i] = a[i + 1];
-            }
+            this.player.money = Nig.calcAfterNtick(gexpr[0], ok);
+            for (let i = 0; i < 8; i++) this.player.generators[i] = Nig.calcAfterNtick(gexpr[i + 1], ok);
+            let amult = this.isChallengeBonusActive(6) ? this.player.acceleratorsBought[0].max(1) : D(1);
+            let challengebonusescount = 0;
+            this.player.challengebonuses.forEach(cb => challengebonusescount += cb ? 1 : 0);
+            this.player.tickspeed = (1000 - this.player.levelitems[1] * challengebonusescount) / this.player.accelerators[0].add(10).mul(amult).log10();
         }
-        return base[1].add(new Decimal(1));
-    }
+        return ok;
+    };
 
-    tick2sec(tick) {
-        // console.log(tick);
-        const accmultmat = this.accmultmatrix();
-        const accamount = this.accamount();
-        if (tick.lte(0)) return [new Decimal(0), new Decimal(0)];
-        if (tick.eq(new Decimal('Infinity'))) return [new Decimal('Infinity'), new Decimal('Infinity')];
-        // const delay = tick.mul('1e-6').max(new Decimal('1e-3'));
-        const delay = new Decimal('1e-3');
-        let base = [accmultmat, new Decimal(1)];
-        let bases = [];
-        while (base[1].lte(tick)) {
-            bases.push(base);
-            base = [matrix_mul_lowertri(base[0], base[0]), base[1].add(base[1])];
-        }
-        const basetick = new Decimal(1000 - this.player.levelitems[1] * this.player.challengebonuses.length).div(1000);
-        const amult = this.activechallengebonuses.includes(6) ? this.player.acceleratorsBought[0].max(1) : new Decimal(1);
-        let sec = new Decimal(0);
-        base = [accamount, new Decimal(0)];
-        let prevdt = basetick.div(base[0][0].add(10).mul(amult).log10());
-        while (base[1].lt(tick)) {
-            const prevtick = base[1];
-            for (let i = bases.length; i-- > 0;) {
-                if (base[1].add(bases[i][1]).lte(tick)) {
-                    if (i == 0 && prevtick.eq(base[1]) || basetick.div(vec_mul_matrix_lowertri00(base[0], bases[i][0]).add(10).mul(amult).log10()).add(delay).gt(prevdt)) {
-                        base = [vec_mul_matrix_lowertri(base[0], bases[i][0]), base[1].add(bases[i][1])];
-                    }
+    tick2sec(tick, update) {
+        if (tick.lte(0)) return D(0);
+        if (tick.eq(D('Infinity'))) return D('Infinity');
+        const aexpr = this.calcAcceleratorExpr();
+        const delay = D('1e-3');
+        let challengebonusescount = 0;
+        this.player.challengebonuses.forEach(cb => challengebonusescount += cb ? 1 : 0);
+        const basetick = D(1000 - this.player.levelitems[1] * challengebonusescount).div(1000);
+        let amult = this.isChallengeBonusActive(6) ? this.player.acceleratorsBought[0].max(1) : D(1);
+        let curtick = D(0);
+        let prevdt = D('1e-3').mul(this.player.tickspeed);
+        let sec = D(0);
+        while (curtick.lt(tick)) {
+            const prevtick = curtick;
+            let ok = curtick.add(1);
+            let ng = tick;
+            let cnt = 0;
+            while (ok.add(1).lt(ng) && cnt < 60) {
+                const m = ok.sub(ng).lt(4) ? ok.add(ng).div(2).floor() : ok.mul(ng).sqrt().floor();
+                if (basetick.div(Nig.calcAfterNtick(aexpr[0], m.sub(prevtick)).add(10).mul(amult).log10()).add(delay).gt(prevdt)) {
+                    ok = m;
+                } else {
+                    ng = m;
                 }
+                cnt += 1;
             }
-            if (prevtick.eq(base[1])) break;
-            const dt = basetick.div(base[0][0].add(10).mul(amult).log10());
-            sec = sec.add((prevdt.add(dt)).div(2).mul(base[1].sub(prevtick)));
+            curtick = ok;
+            if (prevtick.eq(curtick)) break;
+            const tickdiff = curtick.sub(prevtick);
+            const dt = basetick.div(Nig.calcAfterNtick(aexpr[0], tickdiff).add(10).mul(amult).log10());
+            sec = sec.add((prevdt.add(dt)).div(2).mul(tickdiff));
             prevdt = dt;
         }
+        if (update) {
+            for (let i = 0; i < 8; i++) this.player.accelerators[i] = Nig.calcAfterNtick(aexpr[i], tick);
+        }
         return sec;
-    }
-
-    calcgeneratorcost(index, bought) {
-        const mult = bought.neq(0) && this.player.onchallenge && this.player.challenges.includes(1) ? 2 : 1;
-        return (index === 0 ? bought : bought.add(index + 1).mul(index + 1)).mul(mult).pow_base(10);
-    }
-    calcacceleratorcost(index, bought) {
-        let p = bought.add(1);
-        p = p.mul(p.add(1)).div(2);
-        p = p.mul(index === 0 ? 1 : new Decimal(10).mul(new Decimal(2).pow(index - 1)));
-        return p.pow_base(10);
-    }
+    };
 
     simulate(checkpoints) {
         if (checkpoints.length == 0) return [];
-        let idx = Array.from(checkpoints).fill(null).map((_, i) => i);
+        let idx = Array.from(checkpoints).fill().map((_, i) => i);
         idx.sort((i, j) => checkpoints[i].cmp(checkpoints[j]));
         let events = [];
         let maxchp = new Decimal(0);
@@ -665,17 +531,17 @@ class Nig {
             maxchp = maxchp.max(checkpoints[i]);
         }
         for (let i = 0; i < 8; i++) {
-            if (!(this.player.onchallenge && this.player.challenges.includes(6) && (i == 3 || i == 7))) {
+            if (!(this.isChallengeActive(6) && (i == 3 || i == 7))) {
                 for (let j = this.player.generatorsBought[i]; ; j = j.add(1)) {
-                    let c = this.calcgeneratorcost(i, j);
+                    let c = this.calcGeneratorCost(i, j);
                     if (c.gte(maxchp)) break;
                     events.push([c, 1, i]);
                 }
             }
             if (i == 0 || this.player.levelresettime.gt(0) && (i == 1 || this.player.levelitems[3] > i - 2)) {
-                if (!(this.player.onchallenge && this.player.challenges.includes(5))) {
+                if (!this.isChallengeActive(5)) {
                     for (let j = this.player.acceleratorsBought[i]; ; j = j.add(1)) {
-                        let c = this.calcacceleratorcost(i, j);
+                        let c = this.calcAcceleratorCost(i, j);
                         if (c.gte(maxchp)) break;
                         events.push([c, 2, i]);
                     }
@@ -694,22 +560,18 @@ class Nig {
         let totalsec = new Decimal(0);
         events.forEach(([c, ty, i]) => {
             let tick = this.calcgoalticks(c, ty !== 0);
-            const sec = this.tick2sec(tick);
-            // console.log(c, ty, i, tick);
+            const sec = this.tick2sec(tick, ty !== 0);
+            // console.log(c, ty, i, tick, sec, this.player.money);
             if (ty == 0) {
                 res[i] = {
                     tick: totalticks.add(tick),
                     sec: totalsec.add(sec),
                 };
             } else if (ty == 1) {
-                // this.updategenerators(tick);
-                this.updateaccelerators(tick);
                 console.assert(this.buyGenerator(i));
                 totalticks = totalticks.add(tick);
                 totalsec = totalsec.add(sec);
             } else {
-                // this.updategenerators(tick);
-                this.updateaccelerators(tick);
                 console.assert(this.buyAccelerator(i));
                 totalticks = totalticks.add(tick);
                 totalsec = totalsec.add(sec);
@@ -721,7 +583,7 @@ class Nig {
     maximumbonuses() {
         let mxtoken = this.player.token;
         for (let i = 0; i < 16; i++) {
-            if (this.player.challengebonuses.includes(i)) mxtoken += this.challengedata.rewardcost[i];
+            if (this.player.challengebonuses[i]) mxtoken += this.challengedata.rewardcost[i];
         }
         mxtoken = Math.max(mxtoken - 8, 0);
         const effectivechallengebonuses = [2, 3, 6, 7, 10, 11, 13];
@@ -758,33 +620,31 @@ class Nig {
         challengebonusescandidates.forEach(challengebonuses => {
             if (this.player.onchallenge) this.exitChallenge();
             for (let i = 0; i < 8; i++) {
-                if (this.player.challenges.includes(i)) this.configchallenge(i);
+                if (this.player.challenges[i]) this.configChallenge(i);
             }
-            for (let i = 0; i < 16; i++) {
-                if (this.player.challengebonuses.includes(i)) this.buyRewards(i);
+            for (let i = 0; i < 15; i++) {
+                if (this.player.challengebonuses[i]) this.toggleReward(i);
             }
             for (let i = 0; i < 8; i++) {
                 this.player.generatorsMode[i] = i;
             }
 
-            this.buyRewards(4);
-            this.buyRewards(1);
-            this.buyRewards(0);
-            this.checkactivechallengebonuses();
+            this.toggleReward(4);
+            this.toggleReward(1);
+            this.toggleReward(0);
 
             for (let i = 0; i < 8; i++) {
                 if (challengeid & (1 << 7 - i)) {
-                    this.configchallenge(i);
+                    this.configChallenge(i);
                 }
             }
             this.startChallenge();
-            if (this.player.challengebonuses.includes(1)) this.buyRewards(1);
-            if (this.player.challengebonuses.includes(0)) this.buyRewards(0);
+            if (this.player.challengebonuses[1]) this.toggleReward(1);
+            if (this.player.challengebonuses[0]) this.toggleReward(0);
 
-            challengebonuses.forEach(c => this.buyRewards(c));
-            this.checkactivechallengebonuses();
+            challengebonuses.forEach(c => this.toggleReward(c));
 
-            let checkpoints = [new Decimal(this.player.challenges.includes(0) ? (rank ? '1e96' : '1e24') : (rank ? '1e72' : '1e18'))];
+            let checkpoints = [new Decimal(this.player.challenges[0] ? (rank ? '1e96' : '1e24') : (rank ? '1e72' : '1e18'))];
             let res = this.simulate(checkpoints)[0];
             if (res.sec.lt(minres.sec)) {
                 minres = {
@@ -856,7 +716,7 @@ Vue.createApp({
             let self = this;
             return (i, j, rank = false) => {
                 const id = self.challengeid(i, j);
-                const nowchallenging = self.nig.player.onchallenge && self.nig.calcchallengeid() == id;
+                const nowchallenging = self.nig.player.onchallenge && self.nig.calcChallengeId() == id;
                 const clearedchallenge = rank ? self.nig.player.rankchallengecleared.includes(id) : self.nig.player.challengecleared.includes(id);
                 return {
                     nowchallenging: nowchallenging,
@@ -918,7 +778,7 @@ Vue.createApp({
             this.selectWorld(prevworld);
         },
         selectWorld(i) {
-            this.nig.moveworld(i);
+            this.nig.moveWorld(i);
             if (this.autosimulatecheckpoints) this.simulatecheckpoints();
         },
         buyGenerator(i) {
@@ -929,17 +789,16 @@ Vue.createApp({
             this.nig.buyAccelerator(i);
             this.clearCheckpointsCache();
         },
-        buyRewards(i) {
-            this.nig.buyRewards(i);
-            this.nig.checkactivechallengebonuses();
+        toggleReward(i) {
+            this.nig.toggleReward(i);
             this.clearCheckpointsCache();
         },
-        buyRankRewards(i) {
-            this.nig.buyRankRewards(i);
+        toggleRankReward(i) {
+            this.nig.toggleRankReward(i);
             this.clearCheckpointsCache();
         },
         buyLevelitems(i) {
-            this.nig.buylevelitems(i);
+            this.nig.buyLevelitems(i);
             this.clearAllCache();
         },
         changeMode(i) {
@@ -982,7 +841,7 @@ Vue.createApp({
             setTimeout(() => {
                 if (this.checkpoints.length == 0) return;
                 let nig = new Nig();
-                nig.loadplayerb(btoa(JSON.stringify(this.nig.player)));
+                nig.loadPlayerb(btoa(JSON.stringify(this.nig.player)));
                 nig.memory = this.nig.memory;
                 const res = nig.simulate(this.checkpoints);
                 res.forEach((r, i) => {
@@ -998,7 +857,7 @@ Vue.createApp({
                 let sim = rank ? this.rankchallengesimulated : this.challengesimulated;
                 if (sim[this.nig.world][challengeid] !== null) return;
                 let nig = new Nig();
-                nig.loadplayerb(btoa(JSON.stringify(this.nig.player)));
+                nig.loadPlayerb(btoa(JSON.stringify(this.nig.player)));
                 nig.memory = this.nig.memory;
                 sim[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates, rank);
             }, 0);
@@ -1009,7 +868,7 @@ Vue.createApp({
                 let sim = rank ? this.rankchallengesimulated : this.challengesimulated;
                 if (sim[this.nig.world][challengeid] === null) {
                     let nig = new Nig();
-                    nig.loadplayerb(btoa(JSON.stringify(this.nig.player)));
+                    nig.loadPlayerb(btoa(JSON.stringify(this.nig.player)));
                     nig.memory = this.nig.memory;
                     sim[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates, rank);
                 }
