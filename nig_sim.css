@@ -1,5 +1,5 @@
 table.chaltable {
-    width: 100%;
+    width: min(100%, 80vh);
     border-collapse: collapse;
 }
 .chaltable td, .chaltable th {
@@ -32,6 +32,7 @@ td .chalcell, th .chalcell {
     left: 0;
     right: 0;
     text-align: center;
+    vertical-align: middle;
     font-size: small;
     border-width: 0px;
 }
@@ -83,9 +84,18 @@ td .unchallengeable {
 .chalcolorbar {
     position: relative;
     height: 20px;
-    width: 100%;
+    width: min(100%, 80vh);
     background: linear-gradient(90deg, #00ff00, #11ff52, #23ff9b, #34ffda, #46eeff, #57c2ff, #699fff, #7a86ff, #a18cff, #ca9dff, #e9afff, #ffc0ff);
 }
 .hidechallengecolor .chalcolor, .hidechallengecolor .chalcolorbar {
     visibility: hidden;
+}
+#gabought .btn-sm {
+    padding: 0.25rem;
+}
+@media screen and (max-width: 700px) {
+    #controlButtons .btn {
+        padding: .25rem .5rem;
+        font-size: .875rem;
+    }
 }
