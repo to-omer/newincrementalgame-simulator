@@ -491,7 +491,7 @@ class Nig {
         const basetick = D(1000 - this.player.levelitems[1] * challengebonusescount).div(1000);
         let amult = this.isChallengeBonusActive(6) ? this.player.acceleratorsBought[0].max(1) : D(1);
         let curtick = D(0);
-        let prevdt = D('1e-3').mul(this.player.tickspeed);
+        let prevdt = basetick.div(this.player.accelerators[0].add(10).mul(amult).log10());
         let sec = D(0);
         while (curtick.lt(tick)) {
             const prevtick = curtick;
@@ -500,7 +500,7 @@ class Nig {
             let cnt = 0;
             while (ok.add(1).lt(ng) && cnt < 60) {
                 const m = ok.sub(ng).lt(4) ? ok.add(ng).div(2).floor() : ok.mul(ng).sqrt().floor();
-                if (basetick.div(Nig.calcAfterNtick(aexpr[0], m.sub(prevtick)).add(10).mul(amult).log10()).add(delay).gt(prevdt)) {
+                if (basetick.div(Nig.calcAfterNtick(aexpr[0], m).add(10).mul(amult).log10()).add(delay).gt(prevdt)) {
                     ok = m;
                 } else {
                     ng = m;
@@ -509,9 +509,8 @@ class Nig {
             }
             curtick = ok;
             if (prevtick.eq(curtick)) break;
-            const tickdiff = curtick.sub(prevtick);
-            const dt = basetick.div(Nig.calcAfterNtick(aexpr[0], tickdiff).add(10).mul(amult).log10());
-            sec = sec.add((prevdt.add(dt)).div(2).mul(tickdiff));
+            const dt = basetick.div(Nig.calcAfterNtick(aexpr[0], curtick).add(10).mul(amult).log10());
+            sec = sec.add(prevdt.add(dt).div(2).mul(curtick.sub(prevtick)));
             prevdt = dt;
         }
         if (update) {
