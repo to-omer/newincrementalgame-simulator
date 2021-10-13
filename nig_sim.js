@@ -677,7 +677,7 @@ const colorbarpower = f => {
     return col;
 };
 
-Vue.createApp({
+const app = Vue.createApp({
     data() {
         return {
             nig: new Nig(),
@@ -759,6 +759,29 @@ Vue.createApp({
         },
         tmoney() {
             return this.nig.targetmoney(this.checkpointtarget, this.checkpointvalue);
+        },
+        gexpr() {
+            return this.nig.calcGeneratorExpr();
+        },
+        aexpr() {
+            return this.nig.calcAcceleratorExpr();
+        },
+        expression: function () {
+            let self = this;
+            return (i, ty) => {
+                const e = ty == 0 ? self.gexpr[i] : self.aexpr[i];
+                let content = '';
+                e.forEach((e, i) => {
+                    if (e.gt(0)) {
+                        if (content != '') content += ' + ';
+                        e.toExponential(1);
+                        content += e.toExponential(1).replace('e+', '\\cdot10^{') + '}{}_NC_{' + i + '}';
+                    }
+                });
+                if (content == '') content = '0';
+                const name = ty == 0 ? (i == 0 ? 'ポイント' : '発生器' + i) : '時間加速器' + (i + 1);
+                return name + ': \\(' + content + '\\)';
+            };
         },
     },
     methods: {
@@ -901,4 +924,15 @@ Vue.createApp({
             };
         },
     },
-}).mount('#app');
+    mounted() {
+        setTimeout(() => renderMathInElement(document.getElementById('gaexpression'), { delimiters: [{ left: "\\(", right: "\\)", display: false }] }), 0);
+    },
+    updated() {
+        setTimeout(() => renderMathInElement(document.getElementById('gaexpression'), { delimiters: [{ left: "\\(", right: "\\)", display: false }] }), 0);
+    },
+});
+app.config.isCustomElement = tag => {
+    const custom = ['mi', 'mrow', 'annotation', 'semantics', 'math'];
+    return custom.includes(tag);
+};
+app.mount('#app');
