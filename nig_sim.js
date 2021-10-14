@@ -132,6 +132,14 @@ class Nig {
         this.checkWorlds();
     };
 
+    clone() {
+        let nig = new Nig();
+        nig.players = JSON.parse(JSON.stringify(this.players));
+        nig.world = this.world;
+        nig.loadPlayer(nig.players[this.world]);
+        return nig;
+    };
+
     softCap(num, cap) {
         if (num.lte(cap)) return num;
         return cap.mul(D(num.div(cap).log2()).add(1)).min(num);
@@ -907,9 +915,7 @@ const app = Vue.createApp({
         simulatecheckpoints() {
             setTimeout(() => {
                 if (this.checkpoints.length == 0) return;
-                let nig = new Nig();
-                nig.loadPlayerb(btoa(JSON.stringify(this.nig.player)));
-                nig.memory = this.nig.memory;
+                let nig = this.nig.clone();
                 const res = nig.simulate(this.checkpoints);
                 res.forEach((r, i) => {
                     let content = this.checkpoints[i].toExponential(3) + ' ポイントまで ' + r.tick.toExponential(3) + ' ticks';
@@ -923,9 +929,7 @@ const app = Vue.createApp({
             setTimeout(() => {
                 let sim = rank ? this.rankchallengesimulated : this.challengesimulated;
                 if (sim[this.nig.world][challengeid] !== null) return;
-                let nig = new Nig();
-                nig.loadPlayerb(btoa(JSON.stringify(this.nig.player)));
-                nig.memory = this.nig.memory;
+                let nig = this.nig.clone();
                 sim[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates, rank);
             }, 0);
         },
@@ -934,9 +938,7 @@ const app = Vue.createApp({
                 if (challengeid >= 256) return;
                 let sim = rank ? this.rankchallengesimulated : this.challengesimulated;
                 if (sim[this.nig.world][challengeid] === null) {
-                    let nig = new Nig();
-                    nig.loadPlayerb(btoa(JSON.stringify(this.nig.player)));
-                    nig.memory = this.nig.memory;
+                    let nig = this.nig.clone();
                     sim[this.nig.world][challengeid] = nig.simulatechallenges(challengeid, challengebonusescandidates, rank);
                 }
                 this.simulatechallengesrec(challengeid + 1, challengebonusescandidates, rank);
