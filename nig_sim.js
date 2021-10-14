@@ -172,9 +172,9 @@ class Nig {
         if (this.isRankChallengeBonusActive(11))
             mult = mult.mul(new Decimal(2).pow(new Decimal(this.memory).div(12)));
 
-        if (this.onchallenge && this.isRankChallengeBonusActive(4)) {
+        if (this.player.onchallenge && this.isRankChallengeBonusActive(4)) {
             let cnt = 0;
-            this.players.challenges.forEach(b => cnt += b ? 1 : 0);
+            this.player.challenges.forEach(b => cnt += b ? 1 : 0);
             mult = mult.mul(1 + cnt * 0.25);
         }
 
