@@ -15,25 +15,30 @@ class Nig {
     constructor() {
         const initialData = () => {
             return {
-                money: new Decimal(1),
-                level: new Decimal(0),
-                levelresettime: new Decimal(0),
-                maxlevelgained: new Decimal(1),
+                money: D(1),
+                level: D(0),
+                levelresettime: D(0),
+                maxlevelgained: D(1),
                 token: 0,
                 shine: 0,
 
-                rank: new Decimal(0),
-                rankresettime: new Decimal(0),
+                rank: D(0),
+                rankresettime: D(0),
                 ranktoken: 0,
 
-                generators: new Array(8).fill(new Decimal(0)),
-                generatorsBought: new Array(8).fill(new Decimal(0)),
-                generatorsCost: [new Decimal(1), new Decimal('1e4'), new Decimal('1e9'), new Decimal('1e16'), new Decimal('1e25'), new Decimal('1e36'), new Decimal('1e49'), new Decimal('1e64')],
+                generators: new Array(8).fill(D(0)),
+                generatorsBought: new Array(8).fill(D(0)),
+                generatorsCost: [D(1), D('1e4'), D('1e9'), D('1e16'), D('1e25'), D('1e36'), D('1e49'), D('1e64')],
                 generatorsMode: new Array(8).fill().map((_, i) => i),
 
-                accelerators: new Array(8).fill(new Decimal(0)),
-                acceleratorsBought: new Array(8).fill(new Decimal(0)),
-                acceleratorsCost: [new Decimal(10), new Decimal('1e10'), new Decimal('1e20'), new Decimal('1e40'), new Decimal('1e80'), new Decimal('1e160'), new Decimal('1e320'), new Decimal('1e640')],
+                accelerators: new Array(8).fill(D(0)),
+                acceleratorsBought: new Array(8).fill(D(0)),
+                acceleratorsCost: [D(10), D('1e10'), D('1e20'), D('1e40'), D('1e80'), D('1e160'), D('1e320'), D('1e640')],
+
+                darkmoney: D(0),
+                darkgenerators: new Array(8).fill(D(0)),
+                darkgeneratorsBought: new Array(8).fill(D(0)),
+                darkgeneratorsCost: [D('1e100'), D('1e108'), D('1e127'), D('1e164'), D('1e225'), D('1e316'), D('1e423'), D('1e612')],
 
                 tickspeed: 1000,
 
@@ -49,6 +54,9 @@ class Nig {
 
                 levelitems: new Array(5).fill(0),
                 levelitembought: 0,
+
+                remember: 0,
+                rememberspent: 0,
             };
         };
         this.player = initialData();
@@ -57,7 +65,7 @@ class Nig {
             rewardcost: [1, 2, 4, 8, 8, 8, 16, 16, 16, 16, 32, 32, 32, 32, 32]
         };
         this.levelshopdata = {
-            itemcost: [new Decimal('1e1'), new Decimal('1e2'), new Decimal('1e3'), new Decimal('1e4'), new Decimal('1e5')]
+            itemcost: [D('1e1'), D('1e2'), D('1e3'), D('1e4'), D('1e5')]
         }
         this.memory = 0;
         this.worldopened = new Array(10).fill().map(() => false);
@@ -76,15 +84,15 @@ class Nig {
 
     loadPlayer(playerData) {
         this.player = {
-            money: new Decimal(playerData.money),
-            level: new Decimal(playerData.level),
-            levelresettime: new Decimal(playerData.levelresettime),
-            maxlevelgained: new Decimal(playerData.maxlevelgained ?? 1),
+            money: D(playerData.money),
+            level: D(playerData.level),
+            levelresettime: D(playerData.levelresettime),
+            maxlevelgained: D(playerData.maxlevelgained ?? 1),
             token: playerData.token ?? 0,
             shine: playerData.shine ?? 0,
 
-            rank: new Decimal(playerData.rank ?? 0),
-            rankresettime: new Decimal(playerData.rankresettime ?? 0),
+            rank: D(playerData.rank ?? 0),
+            rankresettime: D(playerData.rankresettime ?? 0),
             ranktoken: playerData.ranktoken ?? 0,
 
             generators: playerData.generators.map(D),
@@ -95,6 +103,11 @@ class Nig {
             accelerators: playerData.accelerators.map(D),
             acceleratorsBought: playerData.acceleratorsBought.map(D),
             acceleratorsCost: playerData.acceleratorsCost.map(D),
+
+            darkmoney: D(playerData.darkmoney),
+            darkgenerators: playerData.darkgenerators.map(D),
+            darkgeneratorsBought: playerData.darkgeneratorsBought.map(D),
+            darkgeneratorsCost: playerData.darkgeneratorsCost.map(D),
 
             tickspeed: parseFloat(playerData.tickspeed),
 
@@ -110,6 +123,9 @@ class Nig {
 
             levelitems: playerData.levelitems ?? new Array(5).fill(0),
             levelitembought: playerData.levelitembought ?? 0,
+
+            remember: playerData.remember ?? 0,
+            rememberspent: playerData.rememberspent ?? 0,
         };
         this.checkTrophies();
         this.checkMemories();
@@ -118,41 +134,55 @@ class Nig {
 
     softCap(num, cap) {
         if (num.lte(cap)) return num;
-        return cap.mul(new Decimal(num.div(cap).log2()).add(1)).min(num);
+        return cap.mul(D(num.div(cap).log2()).add(1)).min(num);
     };
 
     strongSoftcap(num, cap) {
         if (num.lte(cap)) return num;
-        return cap.mul(new Decimal(new Decimal(num.div(cap).log2()).add(1).log2()).add(1)).min(num);
+        return cap.mul(D(D(num.div(cap).log2()).add(1).log2()).add(1)).min(num);
     };
 
     calcIncrementMult(i, to, highest) {
-        let mult = new Decimal(1);
+        let mult = D(1);
         if (!this.isChallengeActive(4))
-            mult = mult.mul(new Decimal(10).pow((i + 1) * (i - to)));
+            mult = mult.mul(D(10).pow((i + 1) * (i - to)));
 
         if (!this.isChallengeActive(7))
-            mult = mult.mul(this.softCap(this.player.levelresettime.add(1), new Decimal(100).mul(this.player.levelitems[2] + 1)));
+            mult = mult.mul(this.softCap(this.player.levelresettime.add(1), D(100).mul(this.player.levelitems[2] + 1)));
 
-        mult = mult.mul(new Decimal(this.player.level.add(2).log2()).pow(i - to));
+        mult = mult.mul(D(this.player.level.add(2).log2()).pow(i - to));
 
         if (!this.isChallengeActive(2)) {
             if ((i < highest || this.isChallengeBonusActive(2)) && this.player.generatorsBought[i].gt(0)) {
                 let mm = this.player.generatorsBought[i];
-                if (this.isChallengeBonusActive(11)) mm = mm.mul(new Decimal(mm.add(2).log2()).round());
+                if (this.isChallengeBonusActive(11)) mm = mm.mul(D(mm.add(2).log2()).round());
                 mult = mult.mul(mm);
             }
         }
 
-        if (this.isChallengeBonusActive(3)) mult = mult.mul(new Decimal(2));
-        if (this.isRankChallengeBonusActive(3)) mult = mult.mul(new Decimal(3));
+        if (this.isChallengeBonusActive(3)) mult = mult.mul(D(2));
+        if (this.isRankChallengeBonusActive(3)) mult = mult.mul(D(3));
         if (i == 0 && this.isChallengeBonusActive(7)) {
             if (this.isRankChallengeBonusActive(7))
-                mult = mult.mul(this.strongSoftcap(this.player.maxlevelgained, new Decimal(100000)));
+                mult = mult.mul(this.strongSoftcap(this.player.maxlevelgained, D(100000)));
             else
                 mult = mult.mul(this.player.maxlevelgained.min(100000));
         }
         mult = mult.mul(1 + this.memory * 0.25);
+        if (this.isRankChallengeBonusActive(11))
+            mult = mult.mul(new Decimal(2).pow(new Decimal(this.memory).div(12)));
+
+        if (this.onchallenge && this.isRankChallengeBonusActive(4)) {
+            let cnt = 0;
+            this.players.challenges.forEach(b => cnt += b ? 1 : 0);
+            mult = mult.mul(1 + cnt * 0.25);
+        }
+
+        if (this.player.darkgenerators[i].gte(1))
+            mult = mult.mul(i + 1 + this.player.darkgenerators[i].log10());
+        if (this.player.darkmoney.gte(1))
+            mult = mult.mul(this.player.darkmoney.add(10).log10());
+
         return mult;
     };
 
@@ -187,7 +217,9 @@ class Nig {
         let a = Array.from(new Array(8), (_, i) => new Array(Math.max(0, highest + 1 - i)).fill(D(0)));
         for (let i = 0; i <= highest; i++) a[i][0] = this.player.accelerators[i];
         for (let i = highest + 1; i-- > 1;) {
-            let mult = this.isChallengeBonusActive(10) ? this.player.acceleratorsBought[i] : D(1);
+            let mult = i == 1
+                ? (this.isChallengeBonusActive(10) ? this.player.acceleratorsBought[i] : D(1))
+                : (this.isRankChallengeBonusActive(10) ? this.player.acceleratorsBought[i] : D(1));
             a[i].forEach((aa, j) => a[i - 1][j + 1] = a[i - 1][j + 1].add(aa.mul(mult)));
             while (a[i - 1].length > 0 && a[i - 1][a[i - 1].length - 1].eq(0)) a[i - 1].pop();
         }
@@ -238,7 +270,7 @@ class Nig {
     };
     calcAcceleratorCost(index, bought) {
         let p = bought.add(1);
-        return p.mul(p.add(1)).div(2).mul(index === 0 ? 1 : new Decimal(10).mul(new Decimal(2).pow(index - 1))).pow_base(10);
+        return p.mul(p.add(1)).div(2).mul(index === 0 ? 1 : D(10).mul(D(2).pow(index - 1))).pow_base(10);
     };
     buyAccelerator(index) {
         if (!this.isAcceleratorBuyable(index)) return false;
@@ -286,7 +318,7 @@ class Nig {
         for (let i = 1; i <= 5; i++) {
             if (4 * i * i * d * d * d <= this.player.levelitembought) dec = i;
         }
-        cost = cost.div(new Decimal(10).pow(dec)).max(1);
+        cost = cost.div(D(10).pow(dec)).max(1);
         return cost;
     };
     buyLevelitems(index) {
@@ -320,27 +352,27 @@ class Nig {
     calcGainLevel() {
         let dividing = 19 - this.player.rank.add(2).log2();
         if (dividing < 1) dividing = 1;
-        let gainlevel = new Decimal(this.player.money.log10()).div(dividing).pow_base(2);
+        let gainlevel = D(this.player.money.log10()).div(dividing).pow_base(2);
 
-        let glmin = new Decimal(18).div(dividing).pow_base(2);
+        let glmin = D(18).div(dividing).pow_base(2);
         let glmax = this.player.maxlevelgained.div(2);
 
         if (!glmin.add(0.1).gte(glmax)) {
             if (gainlevel.lt(glmax)) {
-                let persent = new Decimal(1).sub(gainlevel.sub(glmin).div(glmax.sub(glmin)));
+                let persent = D(1).sub(gainlevel.sub(glmin).div(glmax.sub(glmin)));
                 persent = persent.pow(1 + this.player.levelitems[0]);
-                persent = new Decimal(1).sub(persent);
+                persent = D(1).sub(persent);
                 gainlevel = glmax.sub(glmin).mul(persent).add(glmin);
             }
         }
         gainlevel = gainlevel.round();
-        if (this.isChallengeBonusActive(12)) gainlevel = gainlevel.mul(new Decimal(2));
+        if (this.isChallengeBonusActive(12)) gainlevel = gainlevel.mul(D(2));
         return gainlevel;
     };
 
     resetLevel(_force, exit) {
         let gainlevel = this.calcGainLevel();
-        let gainlevelreset = this.player.rankresettime.add(1).mul(new Decimal(exit ? 0 : this.isChallengeBonusActive(8) ? 2 : 1));
+        let gainlevelreset = this.player.rankresettime.add(1).mul(D(exit ? 0 : this.isChallengeBonusActive(8) ? 2 : 1));
 
         if (this.player.onchallenge) {
             this.player.onchallenge = false;
@@ -348,25 +380,31 @@ class Nig {
             this.player.challengecleared.push(this.calcChallengeId());
         }
 
-        this.player.money = new Decimal(1);
-        this.player.level = this.player.level.add(exit ? new Decimal(0) : gainlevel);
+        this.player.money = D(1);
+        this.player.level = this.player.level.add(exit ? D(0) : gainlevel);
         this.player.levelresettime = this.player.levelresettime.add(gainlevelreset);
-        this.player.maxlevelgained = this.player.maxlevelgained.max(exit ? new Decimal(0) : gainlevel);
+        this.player.maxlevelgained = this.player.maxlevelgained.max(exit ? D(0) : gainlevel);
 
-        this.player.generators = new Array(8).fill(new Decimal(0));
-        this.player.generatorsBought = new Array(8).fill(new Decimal(0));
-        this.player.generatorsCost = [new Decimal(1), new Decimal('1e4'), new Decimal('1e9'), new Decimal('1e16'), new Decimal('1e25'), new Decimal('1e36'), new Decimal('1e49'), new Decimal('1e64')];
+        this.player.generators = new Array(8).fill(D(0));
+        this.player.generatorsBought = new Array(8).fill(D(0));
+        this.player.generatorsCost = [D(1), D('1e4'), D('1e9'), D('1e16'), D('1e25'), D('1e36'), D('1e49'), D('1e64')];
 
-        this.player.accelerators = new Array(8).fill(new Decimal(0));
-        this.player.acceleratorsBought = new Array(8).fill(new Decimal(0));
-        this.player.acceleratorsCost = [new Decimal(10), new Decimal('1e10'), new Decimal('1e20'), new Decimal('1e40'), new Decimal('1e80'), new Decimal('1e160'), new Decimal('1e320'), new Decimal('1e640')];
+        this.player.accelerators = new Array(8).fill(D(0));
+        this.player.acceleratorsBought = new Array(8).fill(D(0));
+        this.player.acceleratorsCost = [D(10), D('1e10'), D('1e20'), D('1e40'), D('1e80'), D('1e160'), D('1e320'), D('1e640')];
 
         this.player.tickspeed = 1000;
 
-        if (this.isChallengeBonusActive(0)) this.player.money = new Decimal(10001);
-        if (this.isChallengeBonusActive(1)) this.player.accelerators[0] = new Decimal(10);
-        if (this.isRankChallengeBonusActive(0)) this.player.money = this.player.money.add(new Decimal('1e9'));
+        if (this.isChallengeBonusActive(0)) this.player.money = D(10001);
+        if (this.isChallengeBonusActive(1)) this.player.accelerators[0] = D(10);
+        if (this.isRankChallengeBonusActive(0)) this.player.money = this.player.money.add(D('1e9'));
         if (this.isRankChallengeBonusActive(1)) this.player.accelerators[0] = this.player.accelerators[0].add(256);
+    };
+
+    resetRankborder() {
+        let p = this.isChallengeActive(0) ? 96 : 72
+        p -= this.checkRemembers() / 2.0;
+        return new Decimal(10).pow(p);
     };
 
     calcChallengeId() {
@@ -409,45 +447,52 @@ class Nig {
         }
         this.memory = cnt;
     };
+    checkRemembers() {
+        let cnt = 0;
+        for (let i = this.world + 1; i < 10; i++)
+            cnt += this.players[i].remember;
+        return cnt;
+    };
     checkWorlds() {
         this.worldopened[0] = true;
-        for (let i = 0; i < 10; i++) {
-            if (this.players[i].challengecleared.includes(238)) this.worldopened[1] = true;
-            if (this.players[i].challengecleared.length >= 100) this.worldopened[2] = true;
-            if (this.players[i].rankchallengecleared.length >= 16) this.worldopened[3] = true;
-        }
+        if (this.players[0].challengecleared.includes(238)) this.worldopened[1] = true;
+        if (this.players[0].challengecleared.length >= 100) this.worldopened[2] = true;
+        if (this.players[0].rankchallengecleared.length >= 16) this.worldopened[3] = true;
+        if (this.players[0].levelitembought >= 100000) this.worldopened[4] = true;
+        if (new Decimal(this.players[0].darkmoney).gte('1e8')) this.worldopened[5] = true;
+        if (new Decimal(this.players[0].rank).gte(262142)) this.worldopened[6] = true;
+        if (this.players[0].rankchallengecleared.includes(238)) this.worldopened[7] = true;
+        if (this.players[0].challengecleared.length >= 200) this.worldopened[8] = true;
     };
 
     targetmoney(target, input) {
         try {
-            let value = new Decimal(input);
+            let value = D(input);
             if (target == 'levelreset') {
-                if (value.lt(2)) value = new Decimal('2');
-            } else if (target == 'rankreset') {
-                if (value.lt(4)) value = new Decimal('4');
+                if (value.lt(2)) value = D('2');
             }
             const hasc0 = this.isChallengeActive(0);
             if (target == 'levelreset') {
                 value = value.ceil();
-                const dividing = new Decimal(Math.max(1, 19 - this.player.rank.add(2).log2()));
-                const glmin = new Decimal(18).div(dividing).pow_base(2);
+                const dividing = D(Math.max(1, 19 - this.player.rank.add(2).log2()));
+                const glmin = D(18).div(dividing).pow_base(2);
                 const glmax = this.player.maxlevelgained.div(2);
                 const diff = glmax.sub(glmin);
                 let g = value.sub(0.5);
                 if (!(glmin.add(0.1).gte(glmax)) && value.sub(0.5).lt(glmax)) {
                     g = glmax.sub(diff.mul(glmax.sub(value.sub(0.5)).div(diff).pow(1 / (1 + this.player.levelitems[0]))));
                 }
-                return dividing.mul(g.log2()).pow_base(10).max(new Decimal(hasc0 ? '1e24' : '1e18'));
+                return dividing.mul(g.log2()).pow_base(10).max(D(hasc0 ? '1e24' : '1e18'));
             } else if (target == 'rankreset') {
                 value = value.ceil();
-                return new Decimal(value.sub(0.5).log2()).mul(36 - 1.2 * this.player.levelitems[4]).pow_base(10).max(new Decimal(hasc0 ? '1e96' : '1e72'));
+                return D(value.sub(0.5).log2()).mul(36 - 1.2 * this.player.levelitems[4]).pow_base(10).max(this.resetRankborder());
             } else if (target == 'input') {
                 return value;
             }
         } catch (error) {
-            return new Decimal('NaN');
+            return D('NaN');
         }
-        return new Decimal('NaN');
+        return D('NaN');
     };
 
     calcgoalticks(tmoney, update) {
@@ -524,7 +569,7 @@ class Nig {
         let idx = Array.from(checkpoints).fill().map((_, i) => i);
         idx.sort((i, j) => checkpoints[i].cmp(checkpoints[j]));
         let events = [];
-        let maxchp = new Decimal(0);
+        let maxchp = D(0);
         for (let i = 0; i < checkpoints.length; i++) {
             events.push([checkpoints[i], 0, i]);
             maxchp = maxchp.max(checkpoints[i]);
@@ -555,8 +600,8 @@ class Nig {
             return c;
         });
         let res = Array.from(checkpoints).fill(null);
-        let totalticks = new Decimal(0);
-        let totalsec = new Decimal(0);
+        let totalticks = D(0);
+        let totalsec = D(0);
         events.forEach(([c, ty, i]) => {
             let tick = this.calcgoalticks(c, ty !== 0);
             const sec = this.tick2sec(tick, ty !== 0);
@@ -612,8 +657,8 @@ class Nig {
 
     simulatechallenges(challengeid, challengebonusescandidates, rank) {
         let minres = {
-            tick: new Decimal('Infinity'),
-            sec: new Decimal('Infinity'),
+            tick: D('Infinity'),
+            sec: D('Infinity'),
             challengebonuses: [],
         };
         challengebonusescandidates.forEach(challengebonuses => {
@@ -643,7 +688,7 @@ class Nig {
 
             challengebonuses.forEach(c => this.toggleReward(c));
 
-            let checkpoints = [new Decimal(this.player.challenges[0] ? (rank ? '1e96' : '1e24') : (rank ? '1e72' : '1e18'))];
+            let checkpoints = [rank ? this.resetRankborder() : D(this.isChallengeActive(0) ? '1e24' : '1e18')];
             let res = this.simulate(checkpoints)[0];
             if (res.sec.lt(minres.sec)) {
                 minres = {
@@ -684,7 +729,7 @@ const app = Vue.createApp({
             simulatedcheckpoints: Array.from(new Array(10), () => new Map()),
             challengesimulated: Array.from(new Array(10), () => new Array(256).fill(null)),
             rankchallengesimulated: Array.from(new Array(10), () => new Array(256).fill(null)),
-            checkpoints: [new Decimal('1e18'), new Decimal('1e72')],
+            checkpoints: [D('1e18'), D('1e72')],
             sampletime: [1, 60, 3600, 86400, 2592000, 31536000, 3153600000],
             sampletimelabel: ['s', 'm', 'h', 'D', 'M', 'Y', 'C'],
             hideclearedchallenge: false,
@@ -732,7 +777,7 @@ const app = Vue.createApp({
                 const res = rank ? self.rankchallengesimulated[this.nig.world][id] : self.challengesimulated[this.nig.world][id];
                 if (res !== null) {
                     const sec = res.sec;
-                    if (sec.eq(new Decimal('Infinity'))) {
+                    if (sec.eq(D('Infinity'))) {
                         color = 'rgb(255, 255, 255)';
                     } else {
                         let f = sec.max(1).log10() / Math.log10(3153600000);
