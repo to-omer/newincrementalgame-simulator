@@ -182,7 +182,7 @@ class Nig {
         }
         mult = mult.mul(1 + this.memory * 0.25);
         if (this.isRankChallengeBonusActive(11))
-            mult = mult.mul(new Decimal(2).pow(new Decimal(this.memory).div(12)));
+            mult = mult.mul(D(2).pow(D(this.memory).div(12)));
 
         if (this.player.onchallenge && this.isRankChallengeBonusActive(4)) {
             let cnt = 0;
@@ -416,7 +416,7 @@ class Nig {
     resetRankborder() {
         let p = this.isChallengeActive(0) ? 96 : 72
         p -= this.checkRemembers() / 2.0;
-        return new Decimal(10).pow(p);
+        return D(10).pow(p);
     };
 
     calcChallengeId() {
@@ -471,8 +471,8 @@ class Nig {
         if (this.players[0].challengecleared.length >= 100) this.worldopened[2] = true;
         if (this.players[0].rankchallengecleared.length >= 16) this.worldopened[3] = true;
         if (this.players[0].levelitembought >= 100000) this.worldopened[4] = true;
-        if (new Decimal(this.players[0].darkmoney).gte('1e8')) this.worldopened[5] = true;
-        if (new Decimal(this.players[0].rank).gte(262142)) this.worldopened[6] = true;
+        if (D(this.players[0].darkmoney).gte('1e8')) this.worldopened[5] = true;
+        if (D(this.players[0].rank).gte(262142)) this.worldopened[6] = true;
         if (this.players[0].rankchallengecleared.includes(238)) this.worldopened[7] = true;
         if (this.players[0].challengecleared.length >= 200) this.worldopened[8] = true;
     };
@@ -553,10 +553,10 @@ class Nig {
         while (curtick.lt(tick)) {
             const prevtick = curtick;
             let ok = curtick.add(1);
-            let ng = tick;
+            let ng = tick.add(1);
             let cnt = 0;
             while (ok.add(1).lt(ng) && cnt < 60) {
-                const m = ok.sub(ng).lt(4) ? ok.add(ng).div(2).floor() : ok.mul(ng).sqrt().floor();
+                const m = ng.sub(ok).lt(4) ? ok.add(ng).div(2).floor() : ok.mul(ng).sqrt().floor();
                 if (basetick.div(Nig.calcAfterNtick(aexpr[0], m).add(10).mul(amult).log10()).add(delay).gt(prevdt)) {
                     ok = m;
                 } else {
