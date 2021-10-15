@@ -72,15 +72,19 @@ class Nig {
         this.world = 0;
     };
 
+    save() {
+        this.players[this.world] = this.player;
+    };
+
     loadb(worldDatab) {
         this.players = JSON.parse(atob(worldDatab));
         this.loadPlayer(this.players[this.world]);
-    }
+    };
 
     loadPlayerb(playerDatab) {
         let saveData = JSON.parse(atob(playerDatab));
         this.loadPlayer(saveData);
-    }
+    };
 
     loadPlayer(playerData) {
         this.player = {
@@ -136,7 +140,7 @@ class Nig {
         let nig = new Nig();
         nig.players = JSON.parse(JSON.stringify(this.players));
         nig.world = this.world;
-        nig.loadPlayer(nig.players[this.world]);
+        nig.loadPlayer(JSON.parse(JSON.stringify(this.player)));
         return nig;
     };
 
@@ -163,7 +167,7 @@ class Nig {
         if (!this.isChallengeActive(2)) {
             if ((i < highest || this.isChallengeBonusActive(2)) && this.player.generatorsBought[i].gt(0)) {
                 let mm = this.player.generatorsBought[i];
-                if (this.isChallengeBonusActive(11)) mm = mm.mul(D(mm.add(2).log2()).round());
+                if (this.isChallengeBonusActive(11)) mm = mm.mul(mm.add(2).log2());
                 mult = mult.mul(mm);
             }
         }
@@ -226,8 +230,8 @@ class Nig {
         for (let i = 0; i <= highest; i++) a[i][0] = this.player.accelerators[i];
         for (let i = highest + 1; i-- > 1;) {
             let mult = i == 1
-                ? (this.isChallengeBonusActive(10) ? this.player.acceleratorsBought[i] : D(1))
-                : (this.isRankChallengeBonusActive(10) ? this.player.acceleratorsBought[i] : D(1));
+                ? (this.isChallengeBonusActive(10) ? this.player.acceleratorsBought[i].pow_base(2) : D(1))
+                : (this.isRankChallengeBonusActive(10) ? this.player.acceleratorsBought[i].pow_base(2) : D(1));
             a[i].forEach((aa, j) => a[i - 1][j + 1] = a[i - 1][j + 1].add(aa.mul(mult)));
             while (a[i - 1].length > 0 && a[i - 1][a[i - 1].length - 1].eq(0)) a[i - 1].pop();
         }
@@ -526,7 +530,7 @@ class Nig {
         if (update) {
             this.player.money = Nig.calcAfterNtick(gexpr[0], ok);
             for (let i = 0; i < 8; i++) this.player.generators[i] = Nig.calcAfterNtick(gexpr[i + 1], ok);
-            let amult = this.isChallengeBonusActive(6) ? this.player.acceleratorsBought[0].max(1) : D(1);
+            let amult = this.isChallengeBonusActive(6) ? this.player.acceleratorsBought[0].pow_base(2) : D(1);
             let challengebonusescount = 0;
             this.player.challengebonuses.forEach(cb => challengebonusescount += cb ? 1 : 0);
             this.player.tickspeed = (1000 - this.player.levelitems[1] * challengebonusescount) / this.player.accelerators[0].add(10).mul(amult).log10();
@@ -542,7 +546,7 @@ class Nig {
         let challengebonusescount = 0;
         this.player.challengebonuses.forEach(cb => challengebonusescount += cb ? 1 : 0);
         const basetick = D(1000 - this.player.levelitems[1] * challengebonusescount).div(1000);
-        let amult = this.isChallengeBonusActive(6) ? this.player.acceleratorsBought[0].max(1) : D(1);
+        let amult = this.isChallengeBonusActive(6) ? this.player.acceleratorsBought[0].pow_base(2) : D(1);
         let curtick = D(0);
         let prevdt = basetick.div(this.player.accelerators[0].add(10).mul(amult).log10());
         let sec = D(0);
@@ -853,6 +857,7 @@ const app = Vue.createApp({
             this.selectWorld(prevworld);
         },
         selectWorld(i) {
+            this.nig.save();
             this.nig.moveWorld(i);
             if (this.autosimulatecheckpoints) this.simulatecheckpoints();
         },
