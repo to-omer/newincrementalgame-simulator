@@ -21,6 +21,7 @@ class Nig {
                 maxlevelgained: D(1),
                 token: 0,
                 shine: 0,
+                brightness: 0,
 
                 rank: D(0),
                 rankresettime: D(0),
@@ -94,6 +95,7 @@ class Nig {
             maxlevelgained: D(playerData.maxlevelgained ?? 1),
             token: playerData.token ?? 0,
             shine: playerData.shine ?? 0,
+            brightness: playerData.brightness ?? 0,
 
             rank: D(playerData.rank ?? 0),
             rankresettime: D(playerData.rankresettime ?? 0),
@@ -154,8 +156,8 @@ class Nig {
         return cap.mul(D(D(num.div(cap).log2()).add(1).log2()).add(1)).min(num);
     };
 
-    calcIncrementMult(i, to, highest) {
-        let mult = D(1);
+    calcIncrementMult(mu, i, to, highest) {
+        let mult = mu;
         if (!this.isChallengeActive(4))
             mult = mult.mul(D(10).pow((i + 1) * (i - to)));
 
@@ -191,14 +193,14 @@ class Nig {
         }
 
         if (this.player.darkgenerators[i].gte(1))
-            mult = mult.mul(i + 1 + this.player.darkgenerators[i].log10());
+            mult = mult.mul(i + 2 + this.player.darkgenerators[i].log10());
         if (this.player.darkmoney.gte(1))
             mult = mult.mul(this.player.darkmoney.add(10).log10());
 
         return mult;
     };
 
-    calcGeneratorExpr() {
+    calcGeneratorExpr(mu = D(1)) {
         let highest = 0;
         for (let i = 0; i < 8; i++) if (this.player.generators[i].gt(0)) highest = i;
         let g = Array.from(new Array(9), (_, i) => new Array(Math.max(0, highest + 2 - i)).fill(D(0)));
@@ -207,15 +209,15 @@ class Nig {
         for (let i = highest + 1; i-- > 0;) {
             if (!this.isChallengeBonusActive(13)) {
                 const to = this.player.generatorsMode[i];
-                let mult = this.calcIncrementMult(i, to, highest);
+                let mult = this.calcIncrementMult(mu, i, to, highest);
                 g[i + 1].forEach((gg, j) => g[to][j + 1] = g[to][j + 1].add(gg.mul(mult)));
             } else if (this.isChallengeActive(3)) {
                 const to = 0;
-                let mult = this.calcIncrementMult(i, to, highest).mul(i + 1);
+                let mult = this.calcIncrementMult(mu, i, to, highest).mul(i + 1);
                 g[i + 1].forEach((gg, j) => g[to][j + 1] = g[to][j + 1].add(gg.mul(mult)));
             } else {
                 for (let to = 0; to <= i; to++) {
-                    let mult = this.calcIncrementMult(i, to, highest);
+                    let mult = this.calcIncrementMult(mu, i, to, highest);
                     g[i + 1].forEach((gg, j) => g[to][j + 1] = g[to][j + 1].add(gg.mul(mult)));
                 }
             }
@@ -223,19 +225,31 @@ class Nig {
         }
         return g;
     };
-    calcAcceleratorExpr() {
+    calcAcceleratorExpr(mu = D(1)) {
         let highest = 0;
         for (let i = 1; i < 8; i++) if (this.player.accelerators[i].gt(0)) highest = i;
         let a = Array.from(new Array(8), (_, i) => new Array(Math.max(0, highest + 1 - i)).fill(D(0)));
         for (let i = 0; i <= highest; i++) a[i][0] = this.player.accelerators[i];
         for (let i = highest + 1; i-- > 1;) {
-            let mult = i == 1
-                ? (this.isChallengeBonusActive(10) ? this.player.acceleratorsBought[i].pow_base(2) : D(1))
-                : (this.isRankChallengeBonusActive(10) ? this.player.acceleratorsBought[i].pow_base(2) : D(1));
+            let mult = mu;
+            if (i == 1 ? this.isChallengeBonusActive(10) : this.isRankChallengeBonusActive(10))
+                mult = mult.mul(this.player.acceleratorsBought[i].pow_base(2));
             a[i].forEach((aa, j) => a[i - 1][j + 1] = a[i - 1][j + 1].add(aa.mul(mult)));
             while (a[i - 1].length > 0 && a[i - 1][a[i - 1].length - 1].eq(0)) a[i - 1].pop();
         }
         return a;
+    };
+    calcDarkGeneratorExpr(mu = D(1)) {
+        let highest = 0;
+        for (let i = 0; i < 8; i++) if (this.player.darkgenerators[i].gt(0)) highest = i;
+        let d = Array.from(new Array(9), (_, i) => new Array(Math.max(0, highest + 2 - i)).fill(D(0)));
+        d[0][0] = this.player.darkmoney;
+        for (let i = 0; i <= highest; i++) d[i + 1][0] = this.player.darkgenerators[i];
+        for (let i = highest + 1; i-- > 0;) {
+            d[i + 1].forEach((dd, j) => d[i][j + 1] = d[i][j + 1].add(dd.mul(mu)));
+            while (d[i].length > 0 && d[i][d[i].length - 1].eq(0)) d[i].pop();
+        }
+        return d;
     };
     static calcAfterNtick(expr, n) {
         let p = D(1);
@@ -245,6 +259,41 @@ class Nig {
             p = p.mul(n.sub(i)).div(i + 1);
         }
         return res;
+    };
+
+    updateGenerators(mu = D(1), tick = D(1), gexpr = this.calcGeneratorExpr(mu)) {
+        this.player.money = Nig.calcAfterNtick(gexpr[0], tick);
+        for (let i = 0; i < 8; i++) this.player.generators[i] = Nig.calcAfterNtick(gexpr[i + 1], tick);
+    };
+    updateTickspeed() {
+        const amult = this.isChallengeBonusActive(6) ? this.player.acceleratorsBought[0].pow_base(2) : D(1);
+        let challengebonusescount = 0;
+        this.player.challengebonuses.forEach(cb => challengebonusescount += cb ? 1 : 0);
+        this.player.tickspeed = (1000 - this.player.levelitems[1] * challengebonusescount) / this.player.accelerators[0].add(10).mul(amult).log10();
+    }
+    updateAccelerators(mu = D(1), tick = D(1), aexpr = this.calcAcceleratorExpr(mu)) {
+        for (let i = 0; i < 8; i++) this.player.accelerators[i] = Nig.calcAfterNtick(aexpr[i], tick);
+        this.updateTickspeed();
+    };
+    updateDarkGenerators(mu = D(1), tick = D(1), dexpr = this.calcDarkGeneratorExpr(mu)) {
+        this.player.darkmoney = Nig.calcAfterNtick(dexpr[0], tick);
+        for (let i = 0; i < 8; i++) this.player.darkgenerators[i] = Nig.calcAfterNtick(dexpr[i + 1], tick);
+    };
+
+    spendShine(num) {
+        if (this.player.shine < num) return;
+        this.player.shine -= num;
+        const val = D(11).pow(D(num).log10());
+        this.updateGenerators(val);
+        this.updateAccelerators(val);
+    };
+    spendBrightness(num) {
+        if (this.player.brightness < num) return;
+        this.player.brightness -= num;
+        const val = D(11).pow(D(num * 100).log10());
+        this.updateGenerators(val);
+        this.updateAccelerators(val);
+        this.updateDarkGenerators(D(num));
     };
 
     isChallengeActive(index) {
@@ -290,6 +339,23 @@ class Nig {
         this.player.accelerators[index] = this.player.accelerators[index].add(1);
         this.player.acceleratorsBought[index] = this.player.acceleratorsBought[index].add(1);
         this.player.acceleratorsCost[index] = this.calcAcceleratorCost(index, this.player.acceleratorsBought[index]);
+        return true;
+    };
+
+    isDarkGeneratorBuyable(index) {
+        return this.player.money.gte(this.player.darkgeneratorsCost[index]);
+    };
+    calcDarkGeneratorCost(index, bought) {
+        let p = 100 + (index == 0 ? 0 : (index + 1) * (index + 1) * (index + 1));
+        let q = bought.mul(index + 1).mul(index + 1);
+        return D(10).pow(q.add(p));
+    };
+    buyDarkGenerator(index) {
+        if (!this.isDarkGeneratorBuyable(index)) return false;
+        this.player.money = this.player.money.sub(this.player.darkgeneratorsCost[index]);
+        this.player.darkgenerators[index] = this.player.darkgenerators[index].add(1);
+        this.player.darkgeneratorsBought[index] = this.player.darkgeneratorsBought[index].add(1);
+        this.player.darkgeneratorsCost[index] = this.calcDarkGeneratorCost(index, this.player.darkgeneratorsBought[index]);
         return true;
     };
 
@@ -450,6 +516,9 @@ class Nig {
         if (this.player.rankresettime.gt(0)) this.player.trophies[1] = true;
         if (this.player.shine > 0) this.player.trophies[2] = true;
         if (this.player.challengecleared.includes(238) || this.player.challengecleared.length >= 100) this.player.trophies[3] = true;
+        if (this.player.brightness > 0) this.player.trophies[5] = true;
+        if (this.player.remember > 0) this.player.trophies[6] = true;
+        if (this.world == 0 && this.checkRemembers() > 0) this.player.trophies[6] = true;
     };
     checkMemories() {
         let cnt = 0;
@@ -527,14 +596,7 @@ class Nig {
             }
             cnt += 1;
         }
-        if (update) {
-            this.player.money = Nig.calcAfterNtick(gexpr[0], ok);
-            for (let i = 0; i < 8; i++) this.player.generators[i] = Nig.calcAfterNtick(gexpr[i + 1], ok);
-            let amult = this.isChallengeBonusActive(6) ? this.player.acceleratorsBought[0].pow_base(2) : D(1);
-            let challengebonusescount = 0;
-            this.player.challengebonuses.forEach(cb => challengebonusescount += cb ? 1 : 0);
-            this.player.tickspeed = (1000 - this.player.levelitems[1] * challengebonusescount) / this.player.accelerators[0].add(10).mul(amult).log10();
-        }
+        if (update) this.updateGenerators(D(1), ok, gexpr);
         return ok;
     };
 
@@ -570,9 +632,7 @@ class Nig {
             sec = sec.add(prevdt.add(dt).div(2).mul(curtick.sub(prevtick)));
             prevdt = dt;
         }
-        if (update) {
-            for (let i = 0; i < 8; i++) this.player.accelerators[i] = Nig.calcAfterNtick(aexpr[i], tick);
-        }
+        if (update) this.updateAccelerators(D(1), tick, aexpr);
         return sec;
     };
 
@@ -738,6 +798,8 @@ const app = Vue.createApp({
     data() {
         return {
             nig: new Nig(),
+            shinechallengelength: [64, 96, 128, 160],
+            brightnessrankchallengelength: [32, 64, 128],
             simulatedcheckpoints: Array.from(new Array(10), () => new Map()),
             challengesimulated: Array.from(new Array(10), () => new Array(256).fill(null)),
             rankchallengesimulated: Array.from(new Array(10), () => new Array(256).fill(null)),
@@ -842,6 +904,13 @@ const app = Vue.createApp({
         },
     },
     methods: {
+        formatDecimal(d, places) {
+            if (d.lt(D(10).pow(places))) {
+                return d.toFixed(0);
+            } else {
+                return d.toExponential(places);
+            }
+        },
         importsave() {
             const prevworld = this.nig.world;
             const input = window.prompt('データを入力', '');
@@ -867,6 +936,10 @@ const app = Vue.createApp({
         },
         buyAccelerator(i) {
             this.nig.buyAccelerator(i);
+            this.clearCheckpointsCache();
+        },
+        buyDarkGenerator(i) {
+            this.nig.buyDarkGenerator(i);
             this.clearCheckpointsCache();
         },
         toggleReward(i) {

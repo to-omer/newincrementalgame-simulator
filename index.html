@@ -28,6 +28,10 @@
       <label class="btn btn-outline-dark" for="gaboughtB" data-bs-toggle="collapse" data-bs-target="#gabought"
         aria-expanded="false" aria-controls="gabought">器</label>
 
+      <input type="checkbox" class="btn-check" id="dboughtB" autocomplete="off">
+      <label class="btn btn-outline-dark" for="dboughtB" data-bs-toggle="collapse" data-bs-target="#dbought"
+        aria-expanded="false" aria-controls="dbought">裏</label>
+
       <input type="checkbox" class="btn-check" id="levelInfoB" autocomplete="off">
       <label class="btn btn-outline-dark" for="levelInfoB" data-bs-toggle="collapse" data-bs-target="#levelInfo"
         aria-expanded="false" aria-controls="levelInfo">段位</label>
@@ -35,6 +39,10 @@
       <input type="checkbox" class="btn-check" id="rankInfoB" autocomplete="off">
       <label class="btn btn-outline-dark" for="rankInfoB" data-bs-toggle="collapse" data-bs-target="#rankInfo"
         aria-expanded="false" aria-controls="rankInfo">階位</label>
+
+      <input type="checkbox" class="btn-check" id="shineInfoB" autocomplete="off">
+      <label class="btn btn-outline-dark" for="shineInfoB" data-bs-toggle="collapse" data-bs-target="#shineInfo"
+        aria-expanded="false" aria-controls="shineInfo">輝き</label>
 
       <input type="checkbox" class="btn-check" id="challengeViewB" autocomplete="off">
       <label class="btn btn-outline-dark" for="challengeViewB" data-bs-toggle="collapse" data-bs-target="#challengeView"
@@ -67,13 +75,15 @@
 
     <div class="collapse" id="basicInfo">
       <div class="card card-body">
-        <div id="money">ポイント: {{ nig.player.money.toExponential(3) }}</div>
-        <div>段位: {{ nig.player.level.toNumber() }} 段位リセット: {{ nig.player.levelresettime.toNumber() }}</div>
-        <div>階位: {{ nig.player.rank.toNumber() }} 階位リセット: {{ nig.player.rankresettime.toNumber() }}</div>
-        <div>最大取得段位: {{ nig.player.maxlevelgained }}</div>
-        <div>成功挑戦数: {{ nig.player.challengecleared.length }}</div>
-        <div>成功階位挑戦数: {{ nig.player.rankchallengecleared.length }}</div>
+        <div id="money">ポイント: {{ formatDecimal(nig.player.money, 6) }}</div>
+        <div>段位: {{ formatDecimal(nig.player.level, 6) }} 段位リセット: {{ formatDecimal(nig.player.levelresettime, 6) }}
+        </div>
+        <div>階位: {{ formatDecimal(nig.player.rank, 6) }} 階位リセット: {{ formatDecimal(nig.player.rankresettime, 6) }}</div>
+        <div>最大取得段位: {{ formatDecimal(nig.player.maxlevelgained, 6) }}</div>
+        <div>挑戦達成: {{ nig.player.challengecleared.length }}</div>
+        <div>階位挑戦達成: {{ nig.player.rankchallengecleared.length }}</div>
         <div>記憶: {{ nig.memory }}</div>
+        <div>合計思い出: {{ nig.checkRemembers() }}</div>
       </div>
     </div>
 
@@ -130,6 +140,39 @@
       </table>
     </div>
 
+    <div class="collapse" id="dbought">
+      <table class="table table-bordered table-sm text-center" style="margin-bottom: 0px;">
+        <thead>
+          <tr>
+            <td class="align-middle" colspan="2">裏ポイント</td>
+            <td class="align-middle" colspan="2">{{ formatDecimal(nig.player.darkmoney, 6) }}</td>
+          </tr>
+          <tr>
+            <td class="align-middle" rowspan="2"></td>
+            <td class="align-middle" colspan="3">裏発生器</td>
+          </tr>
+          <tr>
+            <td class="align-middle">所持数</td>
+            <td class="align-middle">購入コスト</td>
+            <td class="align-middle">購入数</td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="i in 8" :key="i">
+            <td class="align-middle">{{ i }}</td>
+            <td class="align-middle">{{ nig.player.darkgenerators[i-1].toExponential(3) }}</td>
+            <td class="d-grid">
+              <button type="button" class="btn btn-outline-dark btn-sm" @click="buyDarkGenerator(i-1)"
+                :disabled="!nig.isDarkGeneratorBuyable(i-1)">
+                {{ nig.player.darkgeneratorsCost[i-1].toExponential(1) }}
+              </button>
+            </td>
+            <td class="align-middle">{{ nig.player.darkgeneratorsBought[i-1].toNumber() }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <div class="collapse" id="levelInfo">
       <div class="card card-body">
         <div>挑戦
@@ -165,7 +208,7 @@
     <div class="collapse" id="rankInfo">
       <div class="card card-body">
         <div v-for="i in 5" :key="i">
-          <span>段位効力{{ i }}</span>
+          <span>段位効力{{ i }}{{ ' ' }}</span>
           <button type="button" class="btn btn-outline-dark btn-sm" @click="buyLevelitems(i-1)"
             :disabled="!nig.isLevelitemBuyable(i-1)">
             購入コスト: {{ nig.calcLevelitemCost(i-1).toExponential(1) }}
@@ -173,6 +216,29 @@
           <span> 所持数: {{ nig.player.levelitems[i-1] }}</span>
         </div>
         <div>累計購入回数: {{ nig.player.levelitembought }}</div>
+      </div>
+    </div>
+
+    <div class="collapse" id="shineInfo">
+      <div class="card card-body">
+        <div>
+          輝き所持数: {{ nig.player.shine }}
+          <span v-for="(length, i) in shinechallengelength">
+            <button type="button" class="btn btn-outline-dark" v-if="nig.player.challengecleared.length >= length"
+              @click="nig.spendShine(Math.pow(10, i))" :disabled="nig.player.shine<Math.pow(10, i)">
+              輝き消費: {{ Math.pow(10, i) }}
+            </button>
+          </span>
+        </div>
+        <div>
+          煌き所持数: {{ nig.player.brightness }}
+          <span v-for="(length, i) in brightnessrankchallengelength">
+            <button type="button" class="btn btn-outline-dark" v-if="nig.player.rankchallengecleared.length >= length"
+              @click="nig.spendBrightness(Math.pow(10, i))" :disabled="nig.player.brightness<Math.pow(10, i)">
+              煌き消費: {{ Math.pow(10, i) }}
+            </button>
+          </span>
+        </div>
       </div>
     </div>
 
