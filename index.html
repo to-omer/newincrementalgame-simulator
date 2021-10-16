@@ -30,19 +30,21 @@
 
       <input type="checkbox" class="btn-check" id="dboughtB" autocomplete="off">
       <label class="btn btn-outline-dark" for="dboughtB" data-bs-toggle="collapse" data-bs-target="#dbought"
-        aria-expanded="false" aria-controls="dbought">裏</label>
+        aria-expanded="false" aria-controls="dbought"
+        v-if="nig.player.money.gte('1e100') || nig.player.darkmoney.gt(0) || nig.player.darkgenerators.some(d => d.gt(0))">裏</label>
 
       <input type="checkbox" class="btn-check" id="levelInfoB" autocomplete="off">
       <label class="btn btn-outline-dark" for="levelInfoB" data-bs-toggle="collapse" data-bs-target="#levelInfo"
-        aria-expanded="false" aria-controls="levelInfo">段位</label>
+        aria-expanded="false" aria-controls="levelInfo"
+        v-if="nig.player.levelresettime.gt(0) || nig.player.rankresettime.gt(0)">段位</label>
 
       <input type="checkbox" class="btn-check" id="rankInfoB" autocomplete="off">
       <label class="btn btn-outline-dark" for="rankInfoB" data-bs-toggle="collapse" data-bs-target="#rankInfo"
-        aria-expanded="false" aria-controls="rankInfo">階位</label>
+        aria-expanded="false" aria-controls="rankInfo" v-if="nig.player.rankresettime.gt(0)">階位</label>
 
       <input type="checkbox" class="btn-check" id="shineInfoB" autocomplete="off">
       <label class="btn btn-outline-dark" for="shineInfoB" data-bs-toggle="collapse" data-bs-target="#shineInfo"
-        aria-expanded="false" aria-controls="shineInfo">輝き</label>
+        aria-expanded="false" aria-controls="shineInfo" v-if="nig.player.challengecleared.length >= 64">輝き</label>
 
       <input type="checkbox" class="btn-check" id="challengeViewB" autocomplete="off">
       <label class="btn btn-outline-dark" for="challengeViewB" data-bs-toggle="collapse" data-bs-target="#challengeView"
@@ -56,7 +58,7 @@
       <label class="btn btn-outline-dark" for="gaexpressionB" data-bs-toggle="collapse" data-bs-target="#gaexpression"
         aria-expanded="false" aria-controls="gaexpression">式</label>
 
-      <div class="btn-group" role="group">
+      <div class="btn-group" role="group" v-if="nig.worldopened[1] || nig.worldopened[2]">
         <button type="button" class="btn btn-outline-dark" id="worldSelect" data-bs-toggle="dropdown"
           aria-expanded="false">
           世界{{ nig.world + 1 }}
@@ -76,14 +78,19 @@
     <div class="collapse" id="basicInfo">
       <div class="card card-body">
         <div id="money">ポイント: {{ formatDecimal(nig.player.money, 6) }}</div>
-        <div>段位: {{ formatDecimal(nig.player.level, 6) }} 段位リセット: {{ formatDecimal(nig.player.levelresettime, 6) }}
+        <div v-if="nig.player.levelresettime.gt(0) || nig.player.rankresettime.gt(0)">
+          段位: {{ formatDecimal(nig.player.level, 6) }} 段位リセット: {{ formatDecimal(nig.player.levelresettime, 6) }}
         </div>
-        <div>階位: {{ formatDecimal(nig.player.rank, 6) }} 階位リセット: {{ formatDecimal(nig.player.rankresettime, 6) }}</div>
-        <div>最大取得段位: {{ formatDecimal(nig.player.maxlevelgained, 6) }}</div>
-        <div>挑戦達成: {{ nig.player.challengecleared.length }}</div>
-        <div>階位挑戦達成: {{ nig.player.rankchallengecleared.length }}</div>
-        <div>記憶: {{ nig.memory }}</div>
-        <div>合計思い出: {{ nig.checkRemembers() }}</div>
+        <div v-if="nig.player.rankresettime.gt(0)">
+          階位: {{ formatDecimal(nig.player.rank, 6) }} 階位リセット: {{ formatDecimal(nig.player.rankresettime, 6) }}
+        </div>
+        <div v-if="nig.player.levelresettime.gt(0) || nig.player.rankresettime.gt(0)">
+          最大取得段位: {{ formatDecimal(nig.player.maxlevelgained, 6) }}
+        </div>
+        <div v-if="nig.player.challengecleared.length>0">挑戦達成: {{ nig.player.challengecleared.length }}</div>
+        <div v-if="nig.player.rankchallengecleared.length>0">階位挑戦達成: {{ nig.player.rankchallengecleared.length }}</div>
+        <div v-if="nig.worldopened[1] || nig.worldopened[2]">記憶: {{ nig.memory }}</div>
+        <div v-if="nig.worldopened[1] || nig.worldopened[2]">合計思い出: {{ nig.checkRemembers() }}</div>
       </div>
     </div>
 
@@ -127,14 +134,21 @@
                 {{ nig.player.generatorsMode[i-1] }}
               </button>
             </td>
-            <td class="align-middle">{{ nig.player.accelerators[i-1].toExponential(3) }}</td>
-            <td class="d-grid">
+            <td class="align-middle" v-if="nig.isAcceleratorOpened(i-1)">
+              {{ nig.player.accelerators[i-1].toExponential(3) }}
+            </td>
+            <td v-else></td>
+            <td class="d-grid" v-if="nig.isAcceleratorOpened(i-1)">
               <button type="button" class="btn btn-outline-dark btn-sm" @click="buyAccelerator(i-1)"
                 :disabled="!nig.isAcceleratorBuyable(i-1)">
                 {{ nig.player.acceleratorsCost[i-1].toExponential(1) }}
               </button>
             </td>
-            <td class="align-middle">{{ nig.player.acceleratorsBought[i-1].toNumber() }}</td>
+            <td v-else></td>
+            <td class="align-middle" v-if="nig.isAcceleratorOpened(i-1)">
+              {{ nig.player.acceleratorsBought[i-1].toNumber() }}
+            </td>
+            <td v-else></td>
           </tr>
         </tbody>
       </table>
@@ -194,8 +208,8 @@
             {{ i }}
           </button>
         </div>
-        <div>大勲章: {{ nig.player.ranktoken }}</div>
-        <div>上位効力
+        <div v-if="nig.player.rankchallengecleared.length>0">大勲章: {{ nig.player.ranktoken }}</div>
+        <div v-if="nig.player.rankchallengecleared.length>0">上位効力
           <button v-for="i in 15" :key="i" type="button" class="btn" @click="toggleRankReward(i-1)"
             :class="buttonselectedcls(nig.player.rankchallengebonuses[i-1])"
             :disabled="!nig.isRankRewardToggleable(i-1)">
@@ -230,7 +244,7 @@
             </button>
           </span>
         </div>
-        <div>
+        <div v-if="nig.player.rankchallengecleared.length>=32">
           煌き所持数: {{ nig.player.brightness }}
           <span v-for="(length, i) in brightnessrankchallengelength">
             <button type="button" class="btn btn-outline-dark" v-if="nig.player.rankchallengecleared.length >= length"

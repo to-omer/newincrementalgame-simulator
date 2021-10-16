@@ -323,10 +323,14 @@ class Nig {
         return true;
     };
 
-    isAcceleratorBuyable(index) {
-        if (this.isChallengeActive(5)) return false;
+    isAcceleratorOpened(index) {
         if (index >= 1 && this.player.levelresettime.lte(0)) return false;
         if (index >= 2 && this.player.levelitems[3] + 1 < index) return false;
+        return true;
+    };
+    isAcceleratorBuyable(index) {
+        if (this.isChallengeActive(5)) return false;
+        if (!this.isAcceleratorOpened(index)) return false;
         return this.player.money.gte(this.player.acceleratorsCost[index]);
     };
     calcAcceleratorCost(index, bought) {
