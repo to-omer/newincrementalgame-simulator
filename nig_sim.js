@@ -83,7 +83,7 @@ class Nig {
     };
 
     loadPlayerb(playerDatab) {
-        let saveData = JSON.parse(atob(playerDatab));
+        const saveData = JSON.parse(atob(playerDatab));
         this.loadPlayer(saveData);
     };
 
@@ -209,15 +209,15 @@ class Nig {
         for (let i = highest + 1; i-- > 0;) {
             if (!this.isChallengeBonusActive(13)) {
                 const to = this.player.generatorsMode[i];
-                let mult = this.calcIncrementMult(mu, i, to, highest);
+                const mult = this.calcIncrementMult(mu, i, to, highest);
                 g[i + 1].forEach((gg, j) => g[to][j + 1] = g[to][j + 1].add(gg.mul(mult)));
             } else if (this.isChallengeActive(3)) {
                 const to = 0;
-                let mult = this.calcIncrementMult(mu, i, to, highest).mul(i + 1);
+                const mult = this.calcIncrementMult(mu, i, to, highest).mul(i + 1);
                 g[i + 1].forEach((gg, j) => g[to][j + 1] = g[to][j + 1].add(gg.mul(mult)));
             } else {
                 for (let to = 0; to <= i; to++) {
-                    let mult = this.calcIncrementMult(mu, i, to, highest);
+                    const mult = this.calcIncrementMult(mu, i, to, highest);
                     g[i + 1].forEach((gg, j) => g[to][j + 1] = g[to][j + 1].add(gg.mul(mult)));
                 }
             }
@@ -386,22 +386,21 @@ class Nig {
 
     isLevelitemBuyable(index) {
         if (!this.player.rankresettime.gt(0)) return false;
-        let cost = this.calcLevelitemCost(index);
+        const cost = this.calcLevelitemCost(index);
         return !(this.player.level.lt(cost) || this.player.levelitems[index] >= 5);
     };
     calcLevelitemCost(index) {
-        let d = index + 1;
-        let cost = this.levelshopdata.itemcost[index].pow(this.player.levelitems[index] + 1);
+        const d = index + 1;
+        const cost = this.levelshopdata.itemcost[index].pow(this.player.levelitems[index] + 1);
         let dec = 0;
         for (let i = 1; i <= 5; i++) {
             if (4 * i * i * d * d * d <= this.player.levelitembought) dec = i;
         }
-        cost = cost.div(D(10).pow(dec)).max(1);
-        return cost;
+        return cost.div(D(10).pow(dec)).max(1);
     };
     buyLevelitems(index) {
         if (!this.player.rankresettime.gt(0)) return;
-        let cost = this.calcLevelitemCost(index);
+        const cost = this.calcLevelitemCost(index);
         if (this.player.level.lt(cost) || this.player.levelitems[index] >= 5) return;
         this.player.level = this.player.level.sub(cost);
         this.player.levelitems[index] = this.player.levelitems[index] + 1;
@@ -428,12 +427,11 @@ class Nig {
     };
 
     calcGainLevel() {
-        let dividing = 19 - this.player.rank.add(2).log2();
-        if (dividing < 1) dividing = 1;
+        const dividing = Math.max(1, 19 - this.player.rank.add(2).log2());
         let gainlevel = D(this.player.money.log10()).div(dividing).pow_base(2);
 
-        let glmin = D(18).div(dividing).pow_base(2);
-        let glmax = this.player.maxlevelgained.div(2);
+        const glmin = D(18).div(dividing).pow_base(2);
+        const glmax = this.player.maxlevelgained.div(2);
 
         if (!glmin.add(0.1).gte(glmax)) {
             if (gainlevel.lt(glmax)) {
@@ -449,8 +447,8 @@ class Nig {
     };
 
     resetLevel(_force, exit) {
-        let gainlevel = this.calcGainLevel();
-        let gainlevelreset = this.player.rankresettime.add(1).mul(D(exit ? 0 : this.isChallengeBonusActive(8) ? 2 : 1));
+        const gainlevel = this.calcGainLevel();
+        const gainlevelreset = this.player.rankresettime.add(1).mul(D(exit ? 0 : this.isChallengeBonusActive(8) ? 2 : 1));
 
         if (this.player.onchallenge) {
             this.player.onchallenge = false;
@@ -480,9 +478,7 @@ class Nig {
     };
 
     resetRankborder() {
-        let p = this.isChallengeActive(0) ? 96 : 72
-        p -= this.checkRemembers() / 2.0;
-        return D(10).pow(p);
+        return D(10).pow((this.isChallengeActive(0) ? 96 : 72) - this.checkRemembers() / 2.0);
     };
 
     calcChallengeId() {
@@ -608,7 +604,7 @@ class Nig {
         let challengebonusescount = 0;
         this.player.challengebonuses.forEach(cb => challengebonusescount += cb ? 1 : 0);
         const basetick = D(1000 - this.player.levelitems[1] * challengebonusescount).div(1000);
-        let amult = this.isChallengeBonusActive(6) ? this.player.acceleratorsBought[0].pow_base(2) : D(1);
+        const amult = this.isChallengeBonusActive(6) ? this.player.acceleratorsBought[0].pow_base(2) : D(1);
         let curtick = D(0);
         let prevdt = basetick.div(this.player.accelerators[0].add(10).mul(amult).log10());
         let sec = D(0);
@@ -657,7 +653,7 @@ class Nig {
             if (i == 0 || this.player.levelresettime.gt(0) && (i == 1 || this.player.levelitems[3] > i - 2)) {
                 if (!this.isChallengeActive(5)) {
                     for (let j = this.player.acceleratorsBought[i]; ; j = j.add(1)) {
-                        let c = this.calcAcceleratorCost(i, j);
+                        const c = this.calcAcceleratorCost(i, j);
                         if (c.gte(maxchp)) break;
                         events.push([c, 2, i]);
                     }
@@ -675,7 +671,7 @@ class Nig {
         let totalticks = D(0);
         let totalsec = D(0);
         events.forEach(([c, ty, i]) => {
-            let tick = this.calcgoalticks(c, ty !== 0);
+            const tick = this.calcgoalticks(c, ty !== 0);
             const sec = this.tick2sec(tick, ty !== 0);
             // console.log(c, ty, i, tick, sec, this.player.money);
             if (ty == 0) {
@@ -854,7 +850,7 @@ const app = Vue.createApp({
                     if (sec.eq(D('Infinity'))) {
                         color = 'rgb(255, 255, 255)';
                     } else {
-                        let f = sec.max(1).log10() / Math.log10(3153600000);
+                        const f = sec.max(1).log10() / Math.log10(3153600000);
                         color = colorbarpower(f);
                     }
                 }
@@ -1033,7 +1029,7 @@ const app = Vue.createApp({
             this.simulatechallengesrec(1, challengebonusescandidates, rank);
         },
         scalesampletime(t) {
-            let r = Math.log10(t) / Math.log10(3153600000) * 100;
+            const r = Math.log10(t) / Math.log10(3153600000) * 100;
             return {
                 position: 'absolute',
                 left: '' + r + '%',
