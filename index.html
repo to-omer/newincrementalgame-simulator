@@ -257,6 +257,16 @@
     </div>
 
     <div class="collapse card card-body" id="challengeView">
+      <div>
+        <div class="form-check form-check-inline">
+          <input type="checkbox" class="form-check-input" id="hideclearedchallenge" v-model="hideclearedchallenge">
+          <label class="form-check-label" for="hideclearedchallenge">クリア済を非表示</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input type="checkbox" class="form-check-input" id="hidechallengecolor" v-model="hidechallengecolor">
+          <label class="form-check-label" for="hidechallengecolor">クリア時間を非表示</label>
+        </div>
+      </div>
       <nav>
         <div class="nav nav-tabs" id="challengeTab" role="tablist">
           <a class="nav-link active" id="challengePanelTab" data-bs-toggle="tab" href="#challengePanel" role="tab"
@@ -265,104 +275,79 @@
             aria-controls="rankchallengePanel" aria-selected="true">階位挑戦</a>
         </div>
       </nav>
-      <div class="tab-content" id="challengeTabContent">
+      <div class="tab-content" id="challengeTabContent"
+        :class="{ showclearedchallenge: !hideclearedchallenge, hidechallengecolor: hidechallengecolor }">
         <div class="tab-pane fade show active" id="challengePanel" role="tabpanel" aria-labelledby="challengePanelTab">
-          <div v-bind:class="{ showclearedchallenge: !hideclearedchallenge, hidechallengecolor: hidechallengecolor }">
-            <div>
-              <button type="button" class="btn btn-outline-dark" @click="simulatechallengesall(false)">シミュレート</button>
-              ⚠重いので注意　クリックで1マスずつシミュレート
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" id="hideclearedchallenge" v-model="hideclearedchallenge">
-              <label class="form-check-label" for="hideclearedchallenge">クリア済を非表示</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" id="hidechallengecolor" v-model="hidechallengecolor">
-              <label class="form-check-label" for="hidechallengecolor">クリア時間を非表示</label>
-            </div>
-            <table class="chaltable">
-              <thead>
-                <tr v-for="i in 4" :key="i">
-                  <th colspan="4" rowspan="4" v-if="i==1">
-                    <div class="chalcell">{{ nig.player.challengecleared.length }}</div>
-                  </th>
-                  <th v-for="j in 16" :key="j">
-                    <div class="chalcell d-flex align-items-center justify-content-center">
-                      {{ (j - 1) % (1 << i)>= (1 << i - 1) ? i : '' }}</div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="i in 16" :key="i">
-                  <th v-for="j in 4" :key="j">
-                    <div class="chalcell  d-flex align-items-center justify-content-center">
-                      {{ (i - 1) % (1 << j)>= (1 << j - 1) ? j + 4 : '' }}</div>
-                  </th>
-                  <td v-for="j in 16" :key="j">
-                    <div class="chalcell" v-bind:class="challengecell(i-1,j-1)"
-                      @click="simulatechallengeone(i-1,j-1,false)">
-                      <div class="chalcolor" v-bind:style="challengescolor(i-1,j-1)"></div>
-                      <span class="chaltooltip" v-if="i>1||j>1" v-html="challengemessage(i-1,j-1)"></span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <div class="chalcolorbar">
-              <span v-for="i in 7" :key="i" v-bind:style="scalesampletime(sampletime[i-1])">{{ sampletimelabel[i-1]
-                }}</span>
-            </div>
+          <div>
+            <button type="button" class="btn btn-outline-dark" @click="simulatechallengesall(false)">シミュレート</button>
+            ⚠重いので注意　クリックで1マスずつシミュレート
+          </div>
+          <table class="chaltable">
+            <thead>
+              <tr v-for="i in 4" :key="i">
+                <th colspan="4" rowspan="4" v-if="i==1">
+                  <div class="chalcell">挑戦達成: {{ nig.player.challengecleared.length }}</div>
+                </th>
+                <th v-for="j in 16" :key="j">
+                  <div class="chalcell d-flex align-items-center justify-content-center">
+                    {{ (j - 1) % (1 << i)>= (1 << i - 1) ? i : '' }}</div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="i in 16" :key="i">
+                <th v-for="j in 4" :key="j">
+                  <div class="chalcell  d-flex align-items-center justify-content-center">
+                    {{ (i - 1) % (1 << j)>= (1 << j - 1) ? j + 4 : '' }}</div>
+                </th>
+                <td v-for="j in 16" :key="j">
+                  <div class="chalcell" :class="challengecell(i-1,j-1)" @click="simulatechallengeone(i-1,j-1,false)">
+                    <div class="chalcolor" :style="challengescolor(i-1,j-1)"></div>
+                    <span class="chaltooltip" v-if="i>1||j>1" v-html="challengemessage(i-1,j-1)"></span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="chalcolorbar">
+            <span v-for="i in 7" :key="i" :style="scalesampletime(sampletime[i-1])">{{ sampletimelabel[i-1] }}</span>
           </div>
         </div>
         <div class="tab-pane fade" id="rankchallengePanel" role="tabpanel" aria-labelledby="rankchallengePanelTab">
-          <div
-            v-bind:class="{ showclearedchallenge: !hideclearedrankchallenge, hidechallengecolor: hiderankchallengecolor }">
-            <div>
-              <button type="button" class="btn btn-outline-dark" @click="simulatechallengesall(true)">シミュレート</button>
-              ⚠重いので注意　クリックで1マスずつシミュレート
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" id="hideclearedrankchallenge"
-                v-model="hideclearedrankchallenge">
-              <label class="form-check-label" for="hideclearedrankchallenge">クリア済を非表示</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" id="hiderankchallengecolor"
-                v-model="hiderankchallengecolor">
-              <label class="form-check-label" for="hiderankchallengecolor">クリア時間を非表示</label>
-            </div>
-            <table class="chaltable">
-              <thead>
-                <tr v-for="i in 4" :key="i">
-                  <th colspan="4" rowspan="4" v-if="i==1">
-                    <div class="chalcell">{{ nig.player.rankchallengecleared.length }}</div>
-                  </th>
-                  <th v-for="j in 16" :key="j">
-                    <div class="chalcell d-flex align-items-center justify-content-center">
-                      {{ (j - 1) % (1 << i)>= (1 << i - 1) ? i : '' }}</div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="i in 16" :key="i">
-                  <th v-for="j in 4" :key="j">
-                    <div class="chalcell d-flex align-items-center justify-content-center">
-                      {{ (i - 1) % (1 << j)>= (1 << j - 1) ? j + 4 : '' }}</div>
-                  </th>
-                  <td v-for="j in 16" :key="j">
-                    <div class="chalcell" v-bind:class="challengecell(i-1,j-1,true)"
-                      @click="simulatechallengeone(i-1,j-1,true)">
-                      <div class="chalcolor" v-bind:style="challengescolor(i-1,j-1,true)"></div>
-                      <span class="chaltooltip" v-if="i>1||j>1" v-html="challengemessage(i-1,j-1,true)"></span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <div class="chalcolorbar">
-              <span v-for="i in 7" :key="i" v-bind:style="scalesampletime(sampletime[i-1])">{{ sampletimelabel[i-1]
-                }}</span>
-            </div>
+          <div>
+            <button type="button" class="btn btn-outline-dark" @click="simulatechallengesall(true)">シミュレート</button>
+            ⚠重いので注意　クリックで1マスずつシミュレート
+          </div>
+          <table class="chaltable">
+            <thead>
+              <tr v-for="i in 4" :key="i">
+                <th colspan="4" rowspan="4" v-if="i==1">
+                  <div class="chalcell">階位挑戦達成: {{ nig.player.rankchallengecleared.length }}</div>
+                </th>
+                <th v-for="j in 16" :key="j">
+                  <div class="chalcell d-flex align-items-center justify-content-center">
+                    {{ (j - 1) % (1 << i)>= (1 << i - 1) ? i : '' }}</div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="i in 16" :key="i">
+                <th v-for="j in 4" :key="j">
+                  <div class="chalcell d-flex align-items-center justify-content-center">
+                    {{ (i - 1) % (1 << j)>= (1 << j - 1) ? j + 4 : '' }}</div>
+                </th>
+                <td v-for="j in 16" :key="j">
+                  <div class="chalcell" :class="challengecell(i-1,j-1,true)"
+                    @click="simulatechallengeone(i-1,j-1,true)">
+                    <div class="chalcolor" :style="challengescolor(i-1,j-1,true)"></div>
+                    <span class="chaltooltip" v-if="i>1||j>1" v-html="challengemessage(i-1,j-1,true)"></span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="chalcolorbar">
+            <span v-for="i in 7" :key="i" :style="scalesampletime(sampletime[i-1])">{{ sampletimelabel[i-1] }}</span>
           </div>
         </div>
       </div>

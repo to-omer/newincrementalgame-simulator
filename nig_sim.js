@@ -808,8 +808,6 @@ const app = Vue.createApp({
             sampletimelabel: ['s', 'm', 'h', 'D', 'M', 'Y', 'C'],
             hideclearedchallenge: false,
             hidechallengecolor: false,
-            hideclearedrankchallenge: false,
-            hiderankchallengecolor: false,
             autosimulatecheckpoints: false,
             checkpointtarget: '',
             checkpointvalue: '',
