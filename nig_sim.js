@@ -125,7 +125,7 @@ class Nig {
             rankchallengecleared: playerData.rankchallengecleared ?? [],
             rankchallengebonuses: numarr2boolarr(playerData.rankchallengebonuses, 15) ?? new Array(15).fill(false),
 
-            trophies: new Array(8).fill(false),
+            trophies: playerData.trophies ?? new Array(8).fill(false),
 
             levelitems: playerData.levelitems ?? new Array(5).fill(0),
             levelitembought: playerData.levelitembought ?? 0,
