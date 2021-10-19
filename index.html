@@ -239,7 +239,7 @@
           輝き所持数: {{ nig.player.shine }}
           <span v-for="(length, i) in shinechallengelength">
             <button type="button" class="btn btn-outline-dark" v-if="nig.player.challengecleared.length >= length"
-              @click="nig.spendShine(Math.pow(10, i))" :disabled="nig.player.shine<Math.pow(10, i)">
+              @click="spendShine(Math.pow(10, i))" :disabled="nig.player.shine<Math.pow(10, i)">
               輝き消費: {{ Math.pow(10, i) }}
             </button>
           </span>
@@ -248,7 +248,7 @@
           煌き所持数: {{ nig.player.brightness }}
           <span v-for="(length, i) in brightnessrankchallengelength">
             <button type="button" class="btn btn-outline-dark" v-if="nig.player.rankchallengecleared.length >= length"
-              @click="nig.spendBrightness(Math.pow(10, i))" :disabled="nig.player.brightness<Math.pow(10, i)">
+              @click="spendBrightness(Math.pow(10, i))" :disabled="nig.player.brightness<Math.pow(10, i)">
               煌き消費: {{ Math.pow(10, i) }}
             </button>
           </span>
@@ -265,6 +265,22 @@
         <div class="form-check form-check-inline">
           <input type="checkbox" class="form-check-input" id="hidechallengecolor" v-model="hidechallengecolor">
           <label class="form-check-label" for="hidechallengecolor">クリア時間を非表示</label>
+        </div>
+      </div>
+      <div>
+        <div class="form-check form-check-inline">
+          <input type="checkbox" class="form-check-input" id="searchChallengeBonuses"
+            v-model="challengeConfig.searchChallengeBonuses">
+          <label class="form-check-label" for="searchChallengeBonuses">効力探索</label>
+        </div>
+        <div class="form-check form-check-inline" v-if="nig.player.rankchallengecleared.length>0">
+          <input type="checkbox" class="form-check-input" id="searchRankChallengeBonuses"
+            v-model="challengeConfig.searchRankChallengeBonuses">
+          <label class="form-check-label" for="searchRankChallengeBonuses">上位効力探索</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input type="checkbox" class="form-check-input" id="toggleBonuses" v-model="challengeConfig.toggleBonuses">
+          <label class="form-check-label" for="toggleBonuses">リセット時効力切り替え</label>
         </div>
       </div>
       <nav>
@@ -408,8 +424,10 @@
       <div class="card-body">
         <h5 class="card-title">挑戦シミュレーション</h5>
         <p class="card-text">
-          挑戦開始時に効力5,2,1の順に買えるだけ買う。
-          その後にどの効力を使うかを効力3,4,7,8,11,12,14の極大集合を全探索する。
+          リセット時効力切り替えが有効なら、挑戦開始時に効力5,2,1、上位効力2,1の順に買えるだけ買う。
+          効力探索が有効なら、効力5と併用して使用する効力の候補として効力3,4,7,8,11,12,14の極大集合を全探索する。
+          上位効力探索が有効なら、使用する上位効力の候補として上位効力4,5,8,11,12の極大集合を全探索する。
+          段位効力2を購入しているなら、より良い効力の組み合わせが存在することがある。
           モードは発生器iならi-1固定。
         </p>
       </div>
