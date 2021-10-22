@@ -262,13 +262,13 @@
           <input type="checkbox" class="form-check-input" id="hideclearedchallenge" v-model="hideclearedchallenge">
           <label class="form-check-label" for="hideclearedchallenge">クリア済を非表示</label>
         </div>
-        <div class="form-check form-check-inline">
+        <div class="form-check form-check-inline" v-if="nig.player.challengecleared.length>=128">
           <input type="checkbox" class="form-check-input" id="hidechallengecolor" v-model="hidechallengecolor">
           <label class="form-check-label" for="hidechallengecolor">クリア時間を非表示</label>
         </div>
       </div>
       <div>
-        <div class="form-check form-check-inline">
+        <div class="form-check form-check-inline" v-if="nig.player.challengecleared.length>0">
           <input type="checkbox" class="form-check-input" id="searchChallengeBonuses"
             v-model="challengeConfig.searchChallengeBonuses">
           <label class="form-check-label" for="searchChallengeBonuses">効力探索</label>
@@ -278,7 +278,7 @@
             v-model="challengeConfig.searchRankChallengeBonuses">
           <label class="form-check-label" for="searchRankChallengeBonuses">上位効力探索</label>
         </div>
-        <div class="form-check form-check-inline">
+        <div class="form-check form-check-inline" v-if="nig.player.challengecleared.length>0">
           <input type="checkbox" class="form-check-input" id="toggleBonuses" v-model="challengeConfig.toggleBonuses">
           <label class="form-check-label" for="toggleBonuses">リセット時効力切り替え</label>
         </div>

@@ -889,8 +889,8 @@ const app = Vue.createApp({
                     const sec = res.sec.add(res.tick.mul(this.procmspertick * 0.001));
                     message = res.tick.toExponential(3) + ' ticks';
                     message += '<br/>(' + sec.toExponential(3) + ' sec)';
-                    if (this.challengeConfig.searchChallengeBonuses) message += '<br/>効力' + res.challengebonuses.map(x => x + 1);
-                    if (this.challengeConfig.searchRankChallengeBonuses) message += '<br/>上位効力' + res.rankchallengebonuses.map(x => x + 1);
+                    if (this.challengeConfig.searchChallengeBonuses && res.challengebonuses.length > 0) message += '<br/>効力' + res.challengebonuses.map(x => x + 1);
+                    if (this.challengeConfig.searchRankChallengeBonuses && res.rankchallengebonuses.length > 0) message += '<br/>上位効力' + res.rankchallengebonuses.map(x => x + 1);
                     // message += '<br/>id: ' + id;
                 }
                 return message;
