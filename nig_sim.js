@@ -593,9 +593,6 @@ class Nig {
     targetmoney(target, input) {
         try {
             let value = D(input);
-            if (target == 'levelreset') {
-                if (value.lt(2)) value = D('2');
-            }
             const hasc0 = this.isChallengeActive(0);
             if (target == 'levelreset') {
                 value = value.ceil();
@@ -605,7 +602,7 @@ class Nig {
                 const diff = glmax.sub(glmin);
                 let g = value.sub(0.5);
                 if (!(glmin.add(0.1).gte(glmax)) && value.sub(0.5).lt(glmax)) {
-                    g = glmax.sub(diff.mul(glmax.sub(value.sub(0.5)).div(diff).pow(1 / (1 + this.player.levelitems[0]))));
+                    g = g.max(glmax.sub(diff.mul(glmax.sub(value.sub(0.5)).div(diff).pow(1 / (1 + this.player.levelitems[0])))));
                 }
                 return dividing.mul(g.log2()).pow_base(10).max(D(hasc0 ? '1e24' : '1e18'));
             } else if (target == 'rankreset') {
