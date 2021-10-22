@@ -262,7 +262,7 @@
           <input type="checkbox" class="form-check-input" id="hideclearedchallenge" v-model="hideclearedchallenge">
           <label class="form-check-label" for="hideclearedchallenge">クリア済を非表示</label>
         </div>
-        <div class="form-check form-check-inline" v-if="nig.player.challengecleared.length>=128">
+        <div class="form-check form-check-inline">
           <input type="checkbox" class="form-check-input" id="hidechallengecolor" v-model="hidechallengecolor">
           <label class="form-check-label" for="hidechallengecolor">クリア時間を非表示</label>
         </div>
@@ -288,7 +288,8 @@
           <a class="nav-link active" id="challengePanelTab" data-bs-toggle="tab" href="#challengePanel" role="tab"
             aria-controls="challengePanel" aria-selected="true">挑戦</a>
           <a class="nav-link" id="rankchallengePanelTab" data-bs-toggle="tab" href="#rankchallengePanel" role="tab"
-            aria-controls="rankchallengePanel" aria-selected="true">階位挑戦</a>
+            aria-controls="rankchallengePanel" aria-selected="true"
+            v-if="nig.player.challengecleared.length>=128">階位挑戦</a>
         </div>
       </nav>
       <div class="tab-content" id="challengeTabContent"
