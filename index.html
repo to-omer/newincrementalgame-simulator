@@ -395,10 +395,7 @@
       </div>
       <ul class="list-group list-group-flush">
         <li v-for="(chkp, i) in checkpoints" class="list-group-item">
-          <span>
-            {{ simulatedcheckpoints[nig.world].has(chkp) ? simulatedcheckpoints[nig.world].get(chkp) :
-            chkp.toExponential(3) + " ポイントまで ???" }}
-          </span>
+          <span>{{ checkpointmessage(chkp, simulatedcheckpoints[nig.world].get(chkp)) }}</span>
           <button type="button" class="btn-close float-end" @click="removecheckpoint(i)"></button>
         </li>
       </ul>
@@ -439,6 +436,12 @@
           一方、所要時間の計算は所要ticksが大きい場合に時間がかかるので近似している。
           現在の新しい放置ゲームの実装では1tickの時間が間隙と更新にかかる時間の和なので、ここでも誤差が発生する。
         </p>
+        <div class="input-group">
+          <span class="input-group-text">1tickあたりの遅延時間</span>
+          <input type="text" class="form-control" v-model.number="procmspertick" placeholder="0"
+            aria-label="procmspertick">
+          <span class="input-group-text">ms</span>
+        </div>
       </div>
     </div>
   </div>

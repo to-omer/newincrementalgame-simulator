@@ -836,11 +836,12 @@ const app = Vue.createApp({
             autosimulatecheckpoints: false,
             checkpointtarget: '',
             checkpointvalue: '',
+            procmspertick: 0,
         }
     },
     computed: {
         challengeid: function () {
-            return (i, j) => {
+            return function (i, j) {
                 let id = 0;
                 for (let k = 0; k < 4; k++) {
                     if (j % (1 << k + 1) >= (1 << k)) {
@@ -854,11 +855,10 @@ const app = Vue.createApp({
             };
         },
         challengecell: function () {
-            let self = this;
-            return (i, j, rank = false) => {
-                const id = self.challengeid(i, j);
-                const nowchallenging = self.nig.player.onchallenge && self.nig.calcChallengeId() == id;
-                const clearedchallenge = rank ? self.nig.player.rankchallengecleared.includes(id) : self.nig.player.challengecleared.includes(id);
+            return function (i, j, rank = false) {
+                const id = this.challengeid(i, j);
+                const nowchallenging = this.nig.player.onchallenge && this.nig.calcChallengeId() == id;
+                const clearedchallenge = rank ? this.nig.player.rankchallengecleared.includes(id) : this.nig.player.challengecleared.includes(id);
                 return {
                     nowchallenging: nowchallenging,
                     clearedchallenge: clearedchallenge,
@@ -867,13 +867,12 @@ const app = Vue.createApp({
             };
         },
         challengescolor: function () {
-            let self = this;
-            return (i, j, rank = false) => {
-                const id = self.challengeid(i, j);
+            return function (i, j, rank = false) {
+                const id = this.challengeid(i, j);
                 let color = 'transparent';
-                const res = rank ? self.rankchallengesimulated[this.nig.world][id] : self.challengesimulated[this.nig.world][id];
+                const res = rank ? this.rankchallengesimulated[this.nig.world][id] : this.challengesimulated[this.nig.world][id];
                 if (res !== null) {
-                    const sec = res.sec;
+                    const sec = res.sec.add(res.tick.mul(this.procmspertick * 0.001));
                     if (sec.eq(D('Infinity'))) {
                         color = 'rgb(255, 255, 255)';
                     } else {
@@ -885,19 +884,29 @@ const app = Vue.createApp({
             };
         },
         challengemessage: function () {
-            let self = this;
-            return (i, j, rank = false) => {
-                const id = self.challengeid(i, j);
-                const res = rank ? self.rankchallengesimulated[this.nig.world][id] : self.challengesimulated[this.nig.world][id];
+            return function (i, j, rank = false) {
+                const id = this.challengeid(i, j);
+                const res = rank ? this.rankchallengesimulated[this.nig.world][id] : this.challengesimulated[this.nig.world][id];
                 let message = 'Uncalculated';
                 if (res !== null) {
+                    const sec = res.sec.add(res.tick.mul(this.procmspertick * 0.001));
                     message = res.tick.toExponential(3) + ' ticks';
-                    message += '<br/>(' + res.sec.toExponential(3) + ' sec)';
-                    if (self.challengeConfig.searchChallengeBonuses) message += '<br/>効力' + res.challengebonuses.map(x => x + 1);
-                    if (self.challengeConfig.searchRankChallengeBonuses) message += '<br/>上位効力' + res.rankchallengebonuses.map(x => x + 1);
+                    message += '<br/>(' + sec.toExponential(3) + ' sec)';
+                    if (this.challengeConfig.searchChallengeBonuses) message += '<br/>効力' + res.challengebonuses.map(x => x + 1);
+                    if (this.challengeConfig.searchRankChallengeBonuses) message += '<br/>上位効力' + res.rankchallengebonuses.map(x => x + 1);
                     // message += '<br/>id: ' + id;
                 }
                 return message;
+            };
+        },
+        checkpointmessage: function () {
+            return function (checkpoint, res) {
+                if (res === undefined) return checkpoint.toExponential(3) + " ポイントまで ???";
+                const sec = res.sec.add(res.tick.mul(this.procmspertick * 0.001));
+                let content = checkpoint.toExponential(3) + ' ポイントまで ' + res.tick.toExponential(3) + ' ticks';
+                content += ' (' + sec.toExponential(3) + ' sec)';
+                content += ' ' + (new Date(Date.now() + Number(sec.mul(1000).toExponential(20)))).toLocaleString() + ' に達成';
+                return content;
             };
         },
         tmoney() {
@@ -910,9 +919,8 @@ const app = Vue.createApp({
             return this.nig.calcAcceleratorExpr();
         },
         expression: function () {
-            let self = this;
-            return (i, ty) => {
-                const e = ty == 0 ? self.gexpr[i] : self.aexpr[i];
+            return function (i, ty) {
+                const e = ty == 0 ? this.gexpr[i] : this.aexpr[i];
                 let content = '';
                 e.forEach((e, i) => {
                     if (e.gt(0)) {
@@ -1026,12 +1034,7 @@ const app = Vue.createApp({
             setTimeout(() => {
                 if (this.checkpoints.length == 0) return;
                 const res = this.nig.clone().simulate(this.checkpoints);
-                res.forEach((r, i) => {
-                    let content = this.checkpoints[i].toExponential(3) + ' ポイントまで ' + r.tick.toExponential(3) + ' ticks';
-                    content += ' (' + r.sec.toExponential(3) + ' sec)';
-                    content += ' ' + (new Date(Date.now() + Number(r.sec.mul(1000).toExponential(20)))).toLocaleString() + ' に達成';
-                    this.simulatedcheckpoints[this.nig.world].set(this.checkpoints[i], content);
-                });
+                res.forEach((r, i) => this.simulatedcheckpoints[this.nig.world].set(this.checkpoints[i], r));
             }, 0);
         },
         simulatechallenges(challengeid, rank, rec) {
