@@ -474,9 +474,10 @@ class Nig {
         }
     };
 
-    calcGainLevel() {
+    calcGainLevel(x) {
+        const money = x === undefined ? this.player.money : x;
         const dividing = Math.max(1, 19 - this.player.rank.add(2).log2());
-        let gainlevel = D(this.player.money.log10()).div(dividing).pow_base(2);
+        let gainlevel = D(money.log10()).div(dividing).pow_base(2);
 
         const glmin = D(18).div(dividing).pow_base(2);
         const glmax = this.player.maxlevelgained.div(2);
@@ -590,21 +591,29 @@ class Nig {
         if (this.players[0].challengecleared.length >= 200) this.worldopened[8] = true;
     };
 
+    searchLowerBound(value, l) {
+        if (this.calcGainLevel(l).gte(value)) return l;
+        let r = l.mul(l);
+        let cnt = 0;
+        while (this.calcGainLevel(r).lt(value)) r = r.mul(r);
+        while (l.add(1).lt(r) && cnt < 60) {
+            const m = r.sub(l).lt(4) ? l.add(r).div(2).floor() : l.mul(r).sqrt().floor();
+            if (this.calcGainLevel(m).gte(value))
+                r = m;
+            else
+                l = m;
+            cnt += 1;
+        }
+        return r;
+    };
+
     targetmoney(target, input) {
         try {
             let value = D(input);
             const hasc0 = this.isChallengeActive(0);
             if (target == 'levelreset') {
                 value = value.ceil();
-                const dividing = D(Math.max(1, 19 - this.player.rank.add(2).log2()));
-                const glmin = D(18).div(dividing).pow_base(2);
-                const glmax = this.player.maxlevelgained.div(2);
-                const diff = glmax.sub(glmin);
-                let g = value.sub(0.5);
-                if (!(glmin.add(0.1).gte(glmax)) && value.sub(0.5).lt(glmax)) {
-                    g = g.max(glmax.sub(diff.mul(glmax.sub(value.sub(0.5)).div(diff).pow(1 / (1 + this.player.levelitems[0])))));
-                }
-                return dividing.mul(g.log2()).pow_base(10).max(D(hasc0 ? '1e24' : '1e18'));
+                return this.searchLowerBound(value, D(hasc0 ? '1e24' : '1e18'));
             } else if (target == 'rankreset') {
                 value = value.ceil();
                 return D(value.sub(0.5).log2()).mul(36 - 1.2 * this.player.levelitems[4]).pow_base(10).max(this.resetRankborder());
