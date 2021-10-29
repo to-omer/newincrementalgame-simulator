@@ -25,7 +25,7 @@ class MaximumBonuses {
         return res;
     };
     static maximumbonuses(mxtoken, rank, onchallenge) {
-        const effectivechallengebonuses = rank ? [3, 4, 7, 10, 11] : [2, 3, 6, 7, 10, 11, 13];
+        const effectivechallengebonuses = rank ? [3, 4, 6, 7, 10, 11, 13] : [2, 3, 6, 7, 10, 11, 13];
         const rewardcost = [1, 2, 4, 8, 8, 8, 16, 16, 16, 16, 32, 32, 32, 32, 32];
         const m = 1 << effectivechallengebonuses.length;
         if (!rank && onchallenge) mxtoken = Math.max(mxtoken - 8, 0);
@@ -275,9 +275,13 @@ class Nig {
         let a = Array.from(new Array(8), (_, i) => new Array(Math.max(0, highest + 1 - i)).fill(D(0)));
         for (let i = 0; i <= highest; i++) a[i][0] = this.player.accelerators[i];
         for (let i = highest + 1; i-- > 1;) {
-            let mult = mu;
-            if (i == 1 ? this.isChallengeBonusActive(10) : this.isRankChallengeBonusActive(10))
-                mult = mult.mul(this.player.acceleratorsBought[i].pow_base(2));
+            let mult = D(1);
+            if (i == 1 ? this.isChallengeBonusActive(10) : this.isRankChallengeBonusActive(6))
+                if (this.isRankChallengeBonusActive(10))
+                    mult = mult.add(this.player.acceleratorsBought[i].pow_base(2));
+                else
+                    mult = mult.add(this.player.acceleratorsBought[i]);
+            mult = mult.mul(mu);
             a[i].forEach((aa, j) => a[i - 1][j + 1] = a[i - 1][j + 1].add(aa.mul(mult)));
             while (a[i - 1].length > 0 && a[i - 1][a[i - 1].length - 1].eq(0)) a[i - 1].pop();
         }
@@ -310,10 +314,14 @@ class Nig {
         for (let i = 0; i < 8; i++) this.player.generators[i] = Nig.calcAfterNtick(gexpr[i + 1], tick);
     };
     updateTickspeed() {
-        const amult = this.isChallengeBonusActive(6) ? this.player.acceleratorsBought[0].pow_base(2) : D(1);
+        const amult = this.isChallengeBonusActive(6) ? (this.isRankChallengeBonusActive(10) ? this.player.acceleratorsBought[0].pow_base(2) : this.player.acceleratorsBought[0].add(1)) : D(1);
+        let acnum = this.player.accelerators[0];
+        if (this.isRankChallengeBonusActive(13)) {
+            for (let i = 1; i < 8; i++) acnum = acnum.mul(this.player.accelerators[i].add(1));
+        }
         let challengebonusescount = 0;
         this.player.challengebonuses.forEach(cb => challengebonusescount += cb ? 1 : 0);
-        this.player.tickspeed = (1000 - this.player.levelitems[1] * challengebonusescount) / this.player.accelerators[0].add(10).mul(amult).log10();
+        this.player.tickspeed = (1000 - this.player.levelitems[1] * challengebonusescount) / acnum.add(10).mul(amult).log10();
     }
     updateAccelerators(mu = D(1), tick = D(1), aexpr = this.calcAcceleratorExpr(mu)) {
         for (let i = 0; i < 8; i++) this.player.accelerators[i] = Nig.calcAfterNtick(aexpr[i], tick);
@@ -487,7 +495,11 @@ class Nig {
                 let persent = D(1).sub(gainlevel.sub(glmin).div(glmax.sub(glmin)));
                 persent = persent.pow(1 + this.player.levelitems[0]);
                 persent = D(1).sub(persent);
-                gainlevel = glmax.sub(glmin).mul(persent).add(glmin);
+                if (persent.lt("1e-5")) {
+                    gainlevel = gainlevel.mul(1 + this.player.levelitems[0]);
+                } else {
+                    gainlevel = glmax.sub(glmin).mul(persent).add(glmin);
+                }
             }
         }
         gainlevel = gainlevel.round();
@@ -651,6 +663,14 @@ class Nig {
         return ok;
     };
 
+    static calcTickfromExpr(aexpr, tick, rankbonus13) {
+        let acnum = Nig.calcAfterNtick(aexpr[0], tick);
+        if (rankbonus13) {
+            for (let i = 1; i < 8; i++) acnum = acnum.mul(Nig.calcAfterNtick(aexpr[i], tick).add(1));
+        }
+        return acnum;
+    }
+
     tick2sec(tick, update) {
         if (tick.lte(0)) return D(0);
         if (tick.eq(D('Infinity'))) return D('Infinity');
@@ -659,9 +679,13 @@ class Nig {
         let challengebonusescount = 0;
         this.player.challengebonuses.forEach(cb => challengebonusescount += cb ? 1 : 0);
         const basetick = D(1000 - this.player.levelitems[1] * challengebonusescount).div(1000);
-        const amult = this.isChallengeBonusActive(6) ? this.player.acceleratorsBought[0].pow_base(2) : D(1);
+        const amult = this.isChallengeBonusActive(6) ? (this.isRankChallengeBonusActive(10) ? this.player.acceleratorsBought[0].pow_base(2) : this.player.acceleratorsBought[0].add(1)) : D(1);
         let curtick = D(0);
-        let prevdt = basetick.div(this.player.accelerators[0].add(10).mul(amult).log10());
+        let acnum = this.player.accelerators[0];
+        if (this.isRankChallengeBonusActive(13)) {
+            for (let i = 1; i < 8; i++) acnum = acnum.mul(this.player.accelerators[i].add(1));
+        }
+        let prevdt = basetick.div(acnum.add(10).mul(amult).log10());
         let sec = D(0);
         while (curtick.lt(tick)) {
             const prevtick = curtick;
@@ -670,7 +694,7 @@ class Nig {
             let cnt = 0;
             while (ok.add(1).lt(ng) && cnt < 60) {
                 const m = ng.sub(ok).lt(4) ? ok.add(ng).div(2).floor() : ok.mul(ng).sqrt().floor();
-                if (basetick.div(Nig.calcAfterNtick(aexpr[0], m).add(10).mul(amult).log10()).add(delay).gt(prevdt)) {
+                if (basetick.div(Nig.calcTickfromExpr(aexpr, m, this.isRankChallengeBonusActive(13)).add(10).mul(amult).log10()).add(delay).gt(prevdt)) {
                     ok = m;
                 } else {
                     ng = m;
@@ -679,7 +703,7 @@ class Nig {
             }
             curtick = ok;
             if (prevtick.eq(curtick)) break;
-            const dt = basetick.div(Nig.calcAfterNtick(aexpr[0], curtick).add(10).mul(amult).log10());
+            const dt = basetick.div(Nig.calcTickfromExpr(aexpr, curtick, this.isRankChallengeBonusActive(13)).add(10).mul(amult).log10());
             sec = sec.add(prevdt.add(dt).div(2).mul(curtick.sub(prevtick)));
             prevdt = dt;
         }
