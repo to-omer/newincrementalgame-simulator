@@ -495,7 +495,7 @@ class Nig {
         return gainlevel;
     };
 
-    resetLevel(_force, exit) {
+    resetLevel(_force, exit, challenge) {
         const gainlevel = this.calcGainLevel();
         const gainlevelreset = this.player.rankresettime.add(1).mul(D(exit ? 0 : this.isChallengeBonusActive(8) ? 2 : 1));
 
@@ -503,6 +503,10 @@ class Nig {
             this.player.onchallenge = false;
             this.player.token = this.player.token + 1;
             this.player.challengecleared.push(this.calcChallengeId());
+        } else if (challenge) {
+            this.player.onchallenge = true;
+            if (this.player.challenges[3])
+                this.player.generatorsMode = new Array(8).fill(0);
         }
 
         this.player.money = D(1);
@@ -538,10 +542,7 @@ class Nig {
     };
 
     startChallenge() {
-        this.resetLevel(true, true);
-        this.player.onchallenge = true;
-        if (this.player.challenges[3])
-            this.player.generatorsMode = new Array(8).fill(0);
+        this.resetLevel(true, true, true);
     };
     exitChallenge() {
         this.player.onchallenge = false;
