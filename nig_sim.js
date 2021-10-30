@@ -55,6 +55,63 @@ class MaximumBonuses {
 
 const mbcache = new MaximumBonuses();
 
+class ItemData {
+    constructor() {
+        this.challengetext = [
+            '昇段リセットは1e24ポイントから可能になります',
+            '発生器は高速に値上がりします',
+            '発生器購入数による強化は無効になります',
+            '発生器のモードは0に固定されます',
+            '段位によらない基礎的な下位モード強化は無効となります',
+            '時間加速器は購入できません',
+            '発生器4と8は購入できません',
+            '段位リセット回数による強化は無効になります',
+        ];
+        this.rewardtext = [
+            '昇段リセット後1e4ポイント獲得',
+            '昇段リセット後10個の時間加速器1獲得',
+            '番号が最高の発生器にも購入数ボーナスが働く',
+            '全発生器の生産力が2倍に',
+            '挑戦中でも効力を有効に',
+            '発生器自動購入器を入手',
+            '時間加速器1に購入数ボーナスが働く',
+            '発生器1の生産力が一度に取得した最大段位数倍に(上限:100000)',
+            '段位リセット回数の増加分が2倍に',
+            '時間加速器自動購入器を入手',
+            '時間加速器2に購入数ボーナスが働く',
+            '発生器の購入数ボーナスが強化',
+            'リセット時の段位取得数が2倍に',
+            '発生器は同時に全てのモードとなる',
+            '自動昇段リセット器を入手',
+        ];
+        this.rankrewardtext = [
+            '昇段リセット後1e9ポイント獲得',
+            '昇段リセット後256個の時間加速器1獲得',
+            '輝きの一度の入手数が2つに',
+            '全発生器の生産力が3倍に',
+            '受けている挑戦の数に応じて発生器が少し強化',
+            '段位効力自動購入器を入手',
+            '時間加速器3以降に購入数ボーナスが働く',
+            '効力8が上限以降も少しだけ強化',
+            '階位リセット回数の増加分が3倍に',
+            '間隙が50毛秒に固定(発生器の生産力変化)',
+            '時間加速器の購入数ボーナスが強化',
+            '記憶が入手数に応じてさらに強化',
+            'リセット時の階位取得数が3倍に',
+            '全時間加速器が間隙に影響',
+            '自動昇階リセット器を入手',
+        ];
+        this.rewardcost = [1, 2, 4, 8, 8, 8, 16, 16, 16, 16, 32, 32, 32, 32, 32];
+        this.levelitemtext = [
+            '段位取得量が最大取得段位以下の範囲で増加します',
+            '取得している効力数によって、間隙が少しだけ短くなります',
+            '段位リセット1回あたりの効果が弱くなるのが遅くなります',
+            '新しい時間加速器を購入可能になります',
+            '階位の入手量が少しだけ増加します',
+        ];
+    }
+}
+
 class Nig {
     constructor() {
         const initialData = () => {
@@ -495,7 +552,7 @@ class Nig {
                 let persent = D(1).sub(gainlevel.sub(glmin).div(glmax.sub(glmin)));
                 persent = persent.pow(1 + this.player.levelitems[0]);
                 persent = D(1).sub(persent);
-                if (persent.lt("1e-5")) {
+                if (persent.lt('1e-5')) {
                     gainlevel = gainlevel.mul(1 + this.player.levelitems[0]);
                 } else {
                     gainlevel = glmax.sub(glmin).mul(persent).add(glmin);
@@ -849,6 +906,7 @@ const app = Vue.createApp({
     data() {
         return {
             nig: new Nig(),
+            itemdata: new ItemData(),
             shinechallengelength: [64, 96, 128, 160],
             brightnessrankchallengelength: [32, 64, 128],
             simulatedcheckpoints: Array.from(new Array(10), () => new Map()),
@@ -871,6 +929,13 @@ const app = Vue.createApp({
         }
     },
     computed: {
+        startChallengeMessage() {
+            let id = this.nig.calcChallengeId();
+            let contents = '挑戦: ' + (this.nig.player.challengecleared.includes(id) ? '済' : '未');
+            if (this.nig.player.rankchallengecleared.length > 0)
+                contents += '  階位挑戦: ' + (this.nig.player.rankchallengecleared.includes(id) ? '済' : '未');
+            return contents;
+        },
         challengeid: function () {
             return function (i, j) {
                 let id = 0;
@@ -932,7 +997,7 @@ const app = Vue.createApp({
         },
         checkpointmessage: function () {
             return function (checkpoint, res) {
-                if (res === undefined) return checkpoint.toExponential(3) + " ポイントまで ???";
+                if (res === undefined) return checkpoint.toExponential(3) + ' ポイントまで ???';
                 const sec = res.sec.add(res.tick.mul(this.procmspertick * 0.001));
                 let content = checkpoint.toExponential(3) + ' ポイントまで ' + res.tick.toExponential(3) + ' ticks';
                 content += ' (' + sec.toExponential(3) + ' sec)';
@@ -1105,10 +1170,10 @@ const app = Vue.createApp({
         },
     },
     mounted() {
-        setTimeout(() => renderMathInElement(document.getElementById('gaexpression'), { delimiters: [{ left: "\\(", right: "\\)", display: false }] }), 0);
+        setTimeout(() => renderMathInElement(document.getElementById('gaexpression'), { delimiters: [{ left: '\\(', right: '\\)', display: false }] }), 0);
     },
     updated() {
-        setTimeout(() => renderMathInElement(document.getElementById('gaexpression'), { delimiters: [{ left: "\\(", right: "\\)", display: false }] }), 0);
+        setTimeout(() => renderMathInElement(document.getElementById('gaexpression'), { delimiters: [{ left: '\\(', right: '\\)', display: false }] }), 0);
     },
 });
 app.config.isCustomElement = tag => {

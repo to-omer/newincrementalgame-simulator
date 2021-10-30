@@ -101,3 +101,25 @@ td .unchallengeable {
         font-size: .725rem;
     }
 }
+.tooltipcell {
+    position: relative;
+}
+.tooltipcell .uptooltip {
+    visibility: hidden;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    padding: 5px 5px;
+    border-radius: 6px;
+
+    width: 28ch;
+    bottom: 115%;
+    left: 50%;
+    margin-left: -14ch;
+
+    position: absolute;
+    z-index: 1;
+}
+.tooltipcell:hover .uptooltip {
+    visibility: visible;
+}

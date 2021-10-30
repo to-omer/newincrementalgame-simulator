@@ -189,32 +189,49 @@
 
     <div class="collapse" id="levelInfo">
       <div class="card card-body">
-        <div>挑戦
-          <button v-for="i in 8" :key="i" type="button" class="btn" @click="nig.configChallenge(i-1)"
-            :class="buttonselectedcls(nig.player.challenges[i-1])" :disabled="nig.player.onchallenge">
-            {{ i }}
-          </button>
-        </div>
-        <div>
-          <button type="button" class="btn btn-outline-dark" @click="toggleChallenge"
-            :disabled="nig.calcChallengeId()==0">
-            {{ nig.player.onchallenge ? '挑戦放棄' : '挑戦開始' }}
-          </button>
+        <div class="d-flex align-items-center">
+          <div>挑戦</div>
+          <div v-for="i in 8" :key="i" class="tooltipcell">
+            <button type="button" class="btn" @click="nig.configChallenge(i-1)"
+              :class="buttonselectedcls(nig.player.challenges[i-1])" :disabled="nig.player.onchallenge">
+              {{ i }}
+            </button>
+            <span class="uptooltip">{{ itemdata.challengetext[i-1] }}</span>
+          </div>
+          <div class="tooltipcell">
+            <button type="button" class="btn btn-outline-dark" @click="toggleChallenge"
+              :disabled="nig.calcChallengeId()==0">
+              {{ nig.player.onchallenge ? '挑戦放棄' : '挑戦開始' }}
+            </button>
+            <span v-if="nig.calcChallengeId()!=0" class="uptooltip" v-html="startChallengeMessage"></span>
+          </div>
         </div>
         <div>勲章: {{ nig.player.token }}</div>
-        <div>効力
-          <button v-for="i in 15" :key="i" type="button" class="btn" @click="toggleReward(i-1)"
-            :class="buttonselectedcls(nig.player.challengebonuses[i-1])" :disabled="!nig.isRewardToggleable(i-1)">
-            {{ i }}
-          </button>
+        <div class="d-flex align-items-center">
+          <div>効力</div>
+          <div v-for="i in 15" :key="i" class="tooltipcell">
+            <button type="button" class="btn" @click="toggleReward(i-1)"
+              :class="buttonselectedcls(nig.player.challengebonuses[i-1])" :disabled="!nig.isRewardToggleable(i-1)">
+              {{ i }}
+            </button>
+            <span class="uptooltip">
+              コスト: {{ itemdata.rewardcost[i-1] }} <br /> {{ itemdata.rewardtext[i-1] }}
+            </span>
+          </div>
         </div>
         <div v-if="nig.player.rankchallengecleared.length>0">大勲章: {{ nig.player.ranktoken }}</div>
-        <div v-if="nig.player.rankchallengecleared.length>0">上位効力
-          <button v-for="i in 15" :key="i" type="button" class="btn" @click="toggleRankReward(i-1)"
-            :class="buttonselectedcls(nig.player.rankchallengebonuses[i-1])"
-            :disabled="!nig.isRankRewardToggleable(i-1)">
-            {{ i }}
-          </button>
+        <div v-if="nig.player.rankchallengecleared.length>0" class="d-flex align-items-center">
+          <div>上位効力</div>
+          <div v-for="i in 15" :key="i" class="tooltipcell">
+            <button type="button" class="btn" @click="toggleRankReward(i-1)"
+              :class="buttonselectedcls(nig.player.rankchallengebonuses[i-1])"
+              :disabled="!nig.isRankRewardToggleable(i-1)">
+              {{ i }}
+            </button>
+            <span class="uptooltip">
+              コスト: {{ itemdata.rewardcost[i-1] }} <br /> {{ itemdata.rankrewardtext[i-1] }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -223,10 +240,15 @@
       <div class="card card-body">
         <div v-for="i in 5" :key="i">
           <span>段位効力{{ i }}{{ ' ' }}</span>
-          <button type="button" class="btn btn-outline-dark btn-sm" @click="buyLevelitems(i-1)"
-            :disabled="!nig.isLevelitemBuyable(i-1)">
-            購入コスト: {{ nig.calcLevelitemCost(i-1).toExponential(1) }}
-          </button>
+          <span class="tooltipcell">
+            <button type="button" class="btn btn-outline-dark btn-sm" @click="buyLevelitems(i-1)"
+              :disabled="!nig.isLevelitemBuyable(i-1)">
+              購入コスト: {{ nig.calcLevelitemCost(i-1).toExponential(1) }}
+            </button>
+            <span class="uptooltip">
+              {{ itemdata.levelitemtext[i-1] }}
+            </span>
+          </span>
           <span> 所持数: {{ nig.player.levelitems[i-1] }}</span>
         </div>
         <div>累計購入回数: {{ nig.player.levelitembought }}</div>
