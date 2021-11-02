@@ -25,7 +25,7 @@ class MaximumBonuses {
         return res;
     };
     static maximumbonuses(mxtoken, rank, onchallenge) {
-        const effectivechallengebonuses = rank ? [3, 4, 6, 7, 10, 11, 13] : [2, 3, 6, 7, 10, 11, 13];
+        const effectivechallengebonuses = rank ? [3, 4, 6, 7, 9, 10, 11, 13] : [2, 3, 6, 7, 10, 11, 13];
         const rewardcost = [1, 2, 4, 8, 8, 8, 16, 16, 16, 16, 32, 32, 32, 32, 32];
         const m = 1 << effectivechallengebonuses.length;
         if (!rank && onchallenge) mxtoken = Math.max(mxtoken - 8, 0);
@@ -297,6 +297,12 @@ class Nig {
             mult = mult.mul(i + 2 + this.player.darkgenerators[i].log10());
         if (this.player.darkmoney.gte(1))
             mult = mult.mul(this.player.darkmoney.add(10).log10());
+
+        if (this.isRankChallengeBonusActive(9)) {
+            const multbyac = D(50).div(this.player.tickspeed);
+            mult = mult.mul(multbyac);
+            if (multbyac.gt(1)) mult = mult.mul(multbyac);
+        }
 
         return mult;
     };
@@ -720,9 +726,9 @@ class Nig {
         return ok;
     };
 
-    static calcTickfromExpr(aexpr, tick, rankbonus13) {
+    calcTickfromExpr(aexpr, tick) {
         let acnum = Nig.calcAfterNtick(aexpr[0], tick);
-        if (rankbonus13) {
+        if (this.isRankChallengeBonusActive(13)) {
             for (let i = 1; i < 8; i++) acnum = acnum.mul(Nig.calcAfterNtick(aexpr[i], tick).add(1));
         }
         return acnum;
@@ -732,7 +738,7 @@ class Nig {
         if (tick.lte(0)) return D(0);
         if (tick.eq(D('Infinity'))) return D('Infinity');
         const aexpr = this.calcAcceleratorExpr();
-        const delay = D('1e-3');
+        const delta = D('1e-3');
         let challengebonusescount = 0;
         this.player.challengebonuses.forEach(cb => challengebonusescount += cb ? 1 : 0);
         const basetick = D(1000 - this.player.levelitems[1] * challengebonusescount).div(1000);
@@ -751,7 +757,7 @@ class Nig {
             let cnt = 0;
             while (ok.add(1).lt(ng) && cnt < 60) {
                 const m = ng.sub(ok).lt(4) ? ok.add(ng).div(2).floor() : ok.mul(ng).sqrt().floor();
-                if (basetick.div(Nig.calcTickfromExpr(aexpr, m, this.isRankChallengeBonusActive(13)).add(10).mul(amult).log10()).add(delay).gt(prevdt)) {
+                if (basetick.div(this.calcTickfromExpr(aexpr, m).add(10).mul(amult).log10()).add(delta).gt(prevdt)) {
                     ok = m;
                 } else {
                     ng = m;
@@ -760,12 +766,103 @@ class Nig {
             }
             curtick = ok;
             if (prevtick.eq(curtick)) break;
-            const dt = basetick.div(Nig.calcTickfromExpr(aexpr, curtick, this.isRankChallengeBonusActive(13)).add(10).mul(amult).log10());
+            const dt = basetick.div(this.calcTickfromExpr(aexpr, curtick).add(10).mul(amult).log10());
             sec = sec.add(prevdt.add(dt).div(2).mul(curtick.sub(prevtick)));
             prevdt = dt;
         }
         if (update) this.updateAccelerators(D(1), tick, aexpr);
         return sec;
+    };
+
+    calcTickandSec(tmoney, update) {
+        if (this.player.money.gte(tmoney)) return { ticks: D(0), sec: D(0) };
+        if (tmoney.eq(D('Infinity'))) return { ticks: D('Infinity'), sec: D('Infinity') };
+        if (this.isRankChallengeBonusActive(9)) {
+            const previnfo = { money: this.player.money, generators: this.player.generators, tickspeed: this.player.tickspeed };
+            const aexpr = this.calcAcceleratorExpr();
+            let challengebonusescount = 0;
+            this.player.challengebonuses.forEach(cb => challengebonusescount += cb ? 1 : 0);
+            const basetick = D(1000 - this.player.levelitems[1] * challengebonusescount);
+            const amult = this.isChallengeBonusActive(6) ? (this.isRankChallengeBonusActive(10) ? this.player.acceleratorsBought[0].pow_base(2) : this.player.acceleratorsBought[0].add(1)) : D(1);
+            let curtick = D(0);
+            let acnum = this.player.accelerators[0];
+            if (this.isRankChallengeBonusActive(13)) {
+                for (let i = 1; i < 8; i++) acnum = acnum.mul(this.player.accelerators[i].add(1));
+            }
+            const basemu9 = D(50).div(1000 - this.player.levelitems[1] * challengebonusescount);
+            let prevmu9 = basemu9.mul(acnum.add(10).mul(amult).log10());
+            let prevmu9mul = prevmu9.mul(prevmu9.max(1));
+            let highesta = 0;
+            for (let i = 0; i < 8; i++) if (this.player.accelerators[i].gt(0)) highesta = i;
+
+            while (this.player.money.lt(tmoney)) {
+                const delta = prevmu9.lt('0.2') ? D('1e-2') : prevmu9.lt('2') ? D('1e-1') : prevmu9.lt('20') ? D('1') : D('10');
+
+                let ok = curtick.add(1);
+                let ng = curtick.add(2);
+                let cnt = 0;
+                if (highesta > 0) {
+                    let curmu9 = basemu9.mul(this.calcTickfromExpr(aexpr, ng).add(10).mul(amult).log10());
+                    while (curmu9.mul(curmu9.max(1)).lt(prevmu9mul.add(delta))) {
+                        ng = ng.mul(ng);
+                        curmu9 = basemu9.mul(this.calcTickfromExpr(aexpr, ng).add(10).mul(amult).log10());
+                    }
+                    while (ok.add(1).lt(ng) && cnt < 60) {
+                        const m = ng.sub(ok).lt(4) ? ok.add(ng).div(2).floor() : ok.mul(ng).sqrt().floor();
+                        curmu9 = basemu9.mul(this.calcTickfromExpr(aexpr, m).add(10).mul(amult).log10());
+                        if (curmu9.mul(curmu9.max(1)).lt(prevmu9mul.add(delta))) {
+                            ok = m;
+                        } else {
+                            ng = m;
+                        }
+                        cnt += 1;
+                    }
+                }
+
+                const gexpr = this.calcGeneratorExpr();
+                if (highesta === 0) {
+                    ok = curtick.add(2);
+                    while (Nig.calcAfterNtick(gexpr[0], ok.sub(curtick)).lt(tmoney)) {
+                        ok = ok.mul(ok);
+                    }
+                }
+
+                if (Nig.calcAfterNtick(gexpr[0], ok.sub(curtick)).gte(tmoney)) {
+                    ng = curtick.add(1);
+                    cnt = 0;
+                    while (ng.add(1).lt(ok) && cnt < 60) {
+                        const m = ok.sub(ng).lt(4) ? ok.add(ng).div(2).floor() : ok.mul(ng).sqrt().floor();
+                        if (Nig.calcAfterNtick(gexpr[0], m.sub(curtick)).lt(tmoney)) {
+                            ng = m;
+                        } else {
+                            ok = m;
+                        }
+                        cnt += 1;
+                    }
+                }
+                const tick = ok.sub(curtick);
+                this.player.money = Nig.calcAfterNtick(gexpr[0], tick);
+                for (let i = 0; i < 8; i++) this.player.generators[i] = Nig.calcAfterNtick(gexpr[i + 1], tick);
+                const tsnum = this.calcTickfromExpr(aexpr, ok).add(10).mul(amult).log10();
+                this.player.tickspeed = basetick.div(tsnum);
+                prevmu9 = basemu9.mul(tsnum);
+                prevmu9mul = prevmu9.mul(prevmu9.max(1));
+                curtick = ok;
+            }
+            if (update) {
+                this.updateAccelerators(D(1), curtick, aexpr);
+            } else {
+                this.player.money = previnfo.money;
+                this.player.generators = previnfo.generators;
+                this.player.tickspeed = previnfo.tickspeed;
+            }
+            const sec = curtick.mul(0.05);
+            return { tick: curtick, sec: sec };
+        } else {
+            const tick = this.calcgoalticks(tmoney, update);
+            const sec = this.tick2sec(tick, update);
+            return { tick: tick, sec: sec };
+        }
     };
 
     simulate(checkpoints) {
@@ -807,8 +904,9 @@ class Nig {
         let totalticks = D(0);
         let totalsec = D(0);
         events.forEach(([c, ty, i]) => {
-            const tick = this.calcgoalticks(c, ty !== 0);
-            const sec = this.tick2sec(tick, ty !== 0);
+            const tickandsec = this.calcTickandSec(c, ty !== 0);
+            const tick = tickandsec.tick;
+            const sec = tickandsec.sec;
             // console.log(c, ty, i, tick, sec, this.player.money);
             if (ty == 0) {
                 res[i] = {
