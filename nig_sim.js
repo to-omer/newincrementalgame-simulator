@@ -488,6 +488,7 @@ class Nig {
             else
                 this.player.token -= this.challengedata.rewardcost[index];
             this.player.challengebonuses[index] = !this.player.challengebonuses[index];
+            this.updateTickspeed();
         }
     };
     isRankRewardToggleable(index) {
@@ -500,6 +501,7 @@ class Nig {
             else
                 this.player.ranktoken -= this.challengedata.rewardcost[index];
             this.player.rankchallengebonuses[index] = !this.player.rankchallengebonuses[index];
+            this.updateTickspeed();
         }
     };
 
