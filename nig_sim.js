@@ -608,7 +608,7 @@ class Nig {
     };
 
     resetRankborder() {
-        return D(10).pow((this.isChallengeActive(0) ? 96 : 72) - this.checkRemembers() / 2.0);
+        return D(10).pow((this.isChallengeActive(0) ? 96 : 72) - this.countRemembers() / 2.0);
     };
 
     calcChallengeId() {
@@ -641,7 +641,7 @@ class Nig {
         if (this.player.challengecleared.includes(238) || this.player.challengecleared.length >= 100) this.player.trophies[3] = true;
         if (this.player.brightness > 0) this.player.trophies[5] = true;
         if (this.player.remember > 0) this.player.trophies[6] = true;
-        if (this.world == 0 && this.checkRemembers() > 0) this.player.trophies[6] = true;
+        if (this.world == 0 && this.countRemembers() > 0) this.player.trophies[6] = true;
     };
     checkMemories() {
         let cnt = 0;
@@ -651,7 +651,7 @@ class Nig {
         }
         this.memory = cnt;
     };
-    checkRemembers() {
+    countRemembers() {
         let cnt = 0;
         for (let i = this.world + 1; i < 10; i++)
             cnt += this.players[i].remember;
@@ -1096,7 +1096,8 @@ const app = Vue.createApp({
             };
         },
         checkpointmessage: function () {
-            return function (checkpoint, res) {
+            return function (checkpoint) {
+                const res = this.simulatedcheckpoints[this.nig.world].get(checkpoint);
                 if (res === undefined) return checkpoint.toExponential(3) + ' ポイントまで ???';
                 const sec = res.sec.add(res.tick.mul(this.procmspertick * 0.001));
                 let content = checkpoint.toExponential(3) + ' ポイントまで ' + res.tick.toExponential(3) + ' ticks';

@@ -90,7 +90,7 @@
         <div v-if="nig.player.challengecleared.length>0">挑戦達成: {{ nig.player.challengecleared.length }}</div>
         <div v-if="nig.player.rankchallengecleared.length>0">階位挑戦達成: {{ nig.player.rankchallengecleared.length }}</div>
         <div v-if="nig.worldopened[1] || nig.worldopened[2]">記憶: {{ nig.memory }}</div>
-        <div v-if="nig.worldopened[1] || nig.worldopened[2]">合計思い出: {{ nig.checkRemembers() }}</div>
+        <div v-if="nig.worldopened[1] || nig.worldopened[2]">合計思い出: {{ nig.countRemembers() }}</div>
       </div>
     </div>
 
@@ -418,7 +418,7 @@
       </div>
       <ul class="list-group list-group-flush">
         <li v-for="(chkp, i) in checkpoints" class="list-group-item">
-          <span>{{ checkpointmessage(chkp, simulatedcheckpoints[nig.world].get(chkp)) }}</span>
+          <span>{{ checkpointmessage(chkp) }}</span>
           <button type="button" class="btn-close float-end" @click="removecheckpoint(i)"></button>
         </li>
       </ul>
