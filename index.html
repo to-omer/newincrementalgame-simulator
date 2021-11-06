@@ -289,6 +289,10 @@
           <input type="checkbox" class="form-check-input" id="hidechallengecolor" v-model="hidechallengecolor">
           <label class="form-check-label" for="hidechallengecolor">クリア時間を非表示</label>
         </div>
+        <div class="form-check form-check-inline">
+          <input type="checkbox" class="form-check-input" id="showtickminimum" v-model="showtickminimum">
+          <label class="form-check-label" for="showtickminimum">最小tickを表示（デフォルト：最小時間）</label>
+        </div>
       </div>
       <div>
         <div class="form-check form-check-inline" v-if="nig.player.challengecleared.length>0">
@@ -349,7 +353,10 @@
               </tr>
             </tbody>
           </table>
-          <div class="chalcolorbar">
+          <div class="chalcolorbar" v-if="showtickminimum">
+            <span v-for="i in 10" :key="i" :style="scalesampletime(sampletick[i-1])">{{ sampleticklabel[i-1] }}</span>
+          </div>
+          <div class="chalcolorbar" v-if="!showtickminimum">
             <span v-for="i in 7" :key="i" :style="scalesampletime(sampletime[i-1])">{{ sampletimelabel[i-1] }}</span>
           </div>
         </div>
@@ -386,7 +393,10 @@
               </tr>
             </tbody>
           </table>
-          <div class="chalcolorbar">
+          <div class="chalcolorbar" v-if="showtickminimum">
+            <span v-for="i in 10" :key="i" :style="scalesampletime(sampletick[i-1])">{{ sampleticklabel[i-1] }}</span>
+          </div>
+          <div class="chalcolorbar" v-if="!showtickminimum">
             <span v-for="i in 7" :key="i" :style="scalesampletime(sampletime[i-1])">{{ sampletimelabel[i-1] }}</span>
           </div>
         </div>

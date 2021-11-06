@@ -1009,10 +1009,18 @@ class Nig {
 
     simulatechallenges(challengeid, rank, config) {
         let minres = {
-            tick: D('Infinity'),
-            sec: D('Infinity'),
-            challengebonuses: [],
-            rankchallengebonuses: [],
+            tickminimum: {
+                tick: D('Infinity'),
+                sec: D('Infinity'),
+                challengebonuses: [],
+                rankchallengebonuses: [],
+            },
+            secminimum: {
+                tick: D('Infinity'),
+                sec: D('Infinity'),
+                challengebonuses: [],
+                rankchallengebonuses: [],
+            },
             config,
         };
         let challengebonusescandidates = config.searchChallengeBonuses
@@ -1047,8 +1055,16 @@ class Nig {
 
                 let checkpoints = [rank ? this.resetRankborder() : D(this.isChallengeActive(0) ? '1e24' : '1e18')];
                 let res = this.simulate(checkpoints)[0];
-                if (res.sec.lt(minres.sec)) {
-                    minres = {
+                if (res.tick.lt(minres.tickminimum.tick)) {
+                    minres.tickminimum = {
+                        tick: res.tick,
+                        sec: res.sec,
+                        challengebonuses: challengebonuses,
+                        rankchallengebonuses: rankchallengebonuses,
+                    };
+                }
+                if (res.sec.lt(minres.secminimum.sec)) {
+                    minres.secminimum = {
                         tick: res.tick,
                         sec: res.sec,
                         challengebonuses: challengebonuses,
@@ -1062,9 +1078,6 @@ class Nig {
 };
 
 const colors = ['#00ff00', '#11ff52', '#23ff9b', '#34ffda', '#46eeff', '#57c2ff', '#699fff', '#7a86ff', '#a18cff', '#ca9dff', '#e9afff', '#ffc0ff'];
-const sampletime = [1, 60, 3600, 86400, 2592000, 31536000, 3153600000];
-const sampletimelabel = ['s', 'm', 'h', 'D', 'M', 'Y', 'C'];
-const scalesampletime = t => Math.log10(Math.max(1, t)) / Math.log10(3153600000);
 const colorbarpower = f => {
     const r = Math.max(0, Math.min(1, f));
     const n = colors.length - 1;
@@ -1092,10 +1105,13 @@ const app = Vue.createApp({
             challengesimulated: Array.from(new Array(10), () => new Array(256).fill(null)),
             rankchallengesimulated: Array.from(new Array(10), () => new Array(256).fill(null)),
             checkpoints: [D('1e18'), D('1e72')],
+            sampletick: [1, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9],
+            sampleticklabel: ['1', '1e1', '1e2', '1e3', '1e4', '1e5', '1e6', '1e7', '1e8', '1e9'],
             sampletime: [1, 60, 3600, 86400, 2592000, 31536000, 3153600000],
             sampletimelabel: ['s', 'm', 'h', 'D', 'M', 'Y', 'C'],
             hideclearedchallenge: false,
             hidechallengecolor: false,
+            showtickminimum: false,
             challengeConfig: {
                 searchChallengeBonuses: true,
                 searchRankChallengeBonuses: true,
@@ -1147,12 +1163,22 @@ const app = Vue.createApp({
                 let color = 'transparent';
                 const res = rank ? this.rankchallengesimulated[this.nig.world][id] : this.challengesimulated[this.nig.world][id];
                 if (res !== null) {
-                    const sec = res.sec.add(res.tick.mul(this.procmspertick * 0.001));
-                    if (sec.eq(D('Infinity'))) {
-                        color = 'rgb(255, 255, 255)';
+                    if (this.showtickminimum) {
+                        const tick = res.tickminimum.tick;
+                        if (tick.eq(D('Infinity'))) {
+                            color = 'rgb(255, 255, 255)';
+                        } else {
+                            const f = tick.max(1).log10() / Math.log10(1e10);
+                            color = colorbarpower(f);
+                        }
                     } else {
-                        const f = sec.max(1).log10() / Math.log10(3153600000);
-                        color = colorbarpower(f);
+                        const sec = res.secminimum.sec.add(res.secminimum.tick.mul(this.procmspertick * 0.001));
+                        if (sec.eq(D('Infinity'))) {
+                            color = 'rgb(255, 255, 255)';
+                        } else {
+                            const f = sec.max(1).log10() / Math.log10(3153600000);
+                            color = colorbarpower(f);
+                        }
                     }
                 }
                 return { 'background-color': color };
@@ -1164,11 +1190,12 @@ const app = Vue.createApp({
                 const res = rank ? this.rankchallengesimulated[this.nig.world][id] : this.challengesimulated[this.nig.world][id];
                 let message = 'Uncalculated';
                 if (res !== null) {
-                    const sec = res.sec.add(res.tick.mul(this.procmspertick * 0.001));
-                    message = res.tick.toExponential(3) + ' ticks';
+                    let mres = this.showtickminimum ? res.tickminimum : res.secminimum;
+                    const sec = mres.sec.add(mres.tick.mul(this.procmspertick * 0.001));
+                    message = mres.tick.toExponential(3) + ' ticks';
                     message += '<br/>(' + sec.toExponential(3) + ' sec)';
-                    if (this.challengeConfig.searchChallengeBonuses && res.challengebonuses.length > 0) message += '<br/>効力' + res.challengebonuses.map(x => x + 1);
-                    if (this.challengeConfig.searchRankChallengeBonuses && res.rankchallengebonuses.length > 0) message += '<br/>上位効力' + res.rankchallengebonuses.map(x => x + 1);
+                    if (this.challengeConfig.searchChallengeBonuses && mres.challengebonuses.length > 0) message += '<br/>効力' + mres.challengebonuses.map(x => x + 1);
+                    if (this.challengeConfig.searchRankChallengeBonuses && mres.rankchallengebonuses.length > 0) message += '<br/>上位効力' + mres.rankchallengebonuses.map(x => x + 1);
                     // message += '<br/>id: ' + id;
                 }
                 return message;
@@ -1319,8 +1346,8 @@ const app = Vue.createApp({
                 let sim = rank ? this.rankchallengesimulated : this.challengesimulated;
                 let update = sim[this.nig.world][challengeid] === null;
                 if (!update) update |= sim[this.nig.world][challengeid].config !== this.challengeConfig;
-                if (!update) update |= !this.challengeConfig.searchChallengeBonuses && sim[this.nig.world][challengeid].challengebonuses !== new Array(15).fill().map((_, i) => i).filter(i => this.nig.player.challengebonuses[i]);
-                if (!update) update |= !this.challengeConfig.searchRankChallengeBonuses && sim[this.nig.world][challengeid].rankchallengebonuses !== new Array(15).fill().map((_, i) => i).filter(i => this.nig.player.rankchallengebonuses[i]);
+                if (!update) update |= !this.challengeConfig.searchChallengeBonuses && sim[this.nig.world][challengeid].secminimum.challengebonuses !== new Array(15).fill().map((_, i) => i).filter(i => this.nig.player.challengebonuses[i]);
+                if (!update) update |= !this.challengeConfig.searchRankChallengeBonuses && sim[this.nig.world][challengeid].secminimum.rankchallengebonuses !== new Array(15).fill().map((_, i) => i).filter(i => this.nig.player.rankchallengebonuses[i]);
 
                 if (update) sim[this.nig.world][challengeid] = this.nig.clone().simulatechallenges(challengeid, rank, this.challengeConfig);
                 if (rec) this.simulatechallenges(challengeid + 1, rank, rec);
