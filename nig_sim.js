@@ -11,50 +11,6 @@ const numarr2boolarr = (numarr, length) => {
     return boolarr;
 };
 
-class MaximumBonuses {
-    constructor() {
-        this.cache = new Map();
-    };
-    get(mxtoken, rank, onchallenge) {
-        const key = { mxtoken: mxtoken, rank: rank, onchallenge: onchallenge };
-        let res = this.cache.get(key);
-        if (res === undefined) {
-            res = MaximumBonuses.maximumbonuses(mxtoken, rank, onchallenge);
-            this.cache.set(key, res);
-        }
-        return res;
-    };
-    static maximumbonuses(mxtoken, rank, onchallenge) {
-        const effectivechallengebonuses = rank ? [3, 4, 6, 7, 9, 10, 11, 13] : [2, 3, 6, 7, 10, 11, 13];
-        const rewardcost = [1, 2, 4, 8, 8, 8, 16, 16, 16, 16, 32, 32, 32, 32, 32];
-        const m = 1 << effectivechallengebonuses.length;
-        if (!rank && onchallenge) mxtoken = Math.max(mxtoken - 8, 0);
-        let costs = new Array(m).fill(0);
-        let challengebonusescandidates = [];
-        for (let i = 0; i < m; i++) {
-            let ok = true;
-            for (let j = 0; j < effectivechallengebonuses.length; j++) {
-                if (!(i & 1 << j)) {
-                    costs[i ^ 1 << j] = costs[i] + rewardcost[effectivechallengebonuses[j]];
-                    ok &= costs[i ^ 1 << j] > mxtoken;
-                }
-            }
-            if (ok && costs[i] <= mxtoken) {
-                let cs = [];
-                for (let j = 0; j < effectivechallengebonuses.length; j++) {
-                    if (i & 1 << j) {
-                        cs.push(effectivechallengebonuses[j]);
-                    }
-                }
-                challengebonusescandidates.push(cs);
-            }
-        }
-        return challengebonusescandidates;
-    }
-};
-
-const mbcache = new MaximumBonuses();
-
 class ItemData {
     constructor() {
         this.challengetext = [
@@ -109,8 +65,55 @@ class ItemData {
             '新しい時間加速器を購入可能になります',
             '階位の入手量が少しだけ増加します',
         ];
+        this.levelitemcost = [D('1e1'), D('1e2'), D('1e3'), D('1e4'), D('1e5')];
     }
-}
+};
+
+const itemdata = new ItemData();
+
+class MaximumBonuses {
+    constructor() {
+        this.cache = new Map();
+    };
+    get(mxtoken, rank, onchallenge) {
+        const key = { mxtoken: mxtoken, rank: rank, onchallenge: onchallenge };
+        let res = this.cache.get(key);
+        if (res === undefined) {
+            res = MaximumBonuses.maximumbonuses(mxtoken, rank, onchallenge);
+            this.cache.set(key, res);
+        }
+        return res;
+    };
+    static maximumbonuses(mxtoken, rank, onchallenge) {
+        const effectivechallengebonuses = rank ? [3, 4, 6, 7, 9, 10, 11, 13] : [2, 3, 6, 7, 10, 11, 13];
+        const m = 1 << effectivechallengebonuses.length;
+        if (!rank && onchallenge) mxtoken = Math.max(mxtoken - 8, 0);
+        let costs = new Array(m).fill(0);
+        let challengebonusescandidates = [];
+        for (let i = 0; i < m; i++) {
+            let ok = true;
+            for (let j = 0; j < effectivechallengebonuses.length; j++) {
+                if (!(i & 1 << j)) {
+                    costs[i ^ 1 << j] = costs[i] + itemdata.rewardcost[effectivechallengebonuses[j]];
+                    ok &= costs[i ^ 1 << j] > mxtoken;
+                }
+            }
+            if (ok && costs[i] <= mxtoken) {
+                let cs = [];
+                for (let j = 0; j < effectivechallengebonuses.length; j++) {
+                    if (i & 1 << j) {
+                        cs.push(effectivechallengebonuses[j]);
+                    }
+                }
+                challengebonusescandidates.push(cs);
+            }
+        }
+        return challengebonusescandidates;
+    }
+};
+
+const mbcache = new MaximumBonuses();
+
 
 class Nig {
     constructor() {
@@ -163,12 +166,7 @@ class Nig {
         };
         this.player = initialData();
         this.players = new Array(10).fill().map(() => initialData());
-        this.challengedata = {
-            rewardcost: [1, 2, 4, 8, 8, 8, 16, 16, 16, 16, 32, 32, 32, 32, 32]
-        };
-        this.levelshopdata = {
-            itemcost: [D('1e1'), D('1e2'), D('1e3'), D('1e4'), D('1e5')]
-        }
+        this.commonmult = D(1);
         this.memory = 0;
         this.worldopened = new Array(10).fill().map(() => false);
         this.world = 0;
@@ -257,13 +255,40 @@ class Nig {
         return cap.mul(D(D(num.div(cap).log2()).add(1).log2()).add(1)).min(num);
     };
 
-    calcIncrementMult(mu, i, to, highest) {
-        let mult = mu;
-        if (!this.isChallengeActive(4))
-            mult = mult.mul(D(10).pow((i + 1) * (i - to)));
-
+    calcCommonMult() {
+        let mult = D(1);
         if (!this.isChallengeActive(7))
             mult = mult.mul(this.softCap(this.player.levelresettime.add(1), D(100).mul(this.player.levelitems[2] + 1)));
+
+        if (this.isChallengeBonusActive(3)) mult = mult.mul(D(2));
+        if (this.isRankChallengeBonusActive(3)) mult = mult.mul(D(3));
+
+        mult = mult.mul(1 + this.memory * 0.25);
+        if (this.isRankChallengeBonusActive(11))
+            mult = mult.mul(D(2).pow(D(this.memory).div(12)));
+
+        if (this.player.onchallenge && this.isRankChallengeBonusActive(4)) {
+            let cnt = 0;
+            this.player.challenges.forEach(b => cnt += b ? 1 : 0);
+            mult = mult.mul(1 + cnt * 0.25);
+        }
+
+        if (this.player.darkmoney.gte(1))
+            mult = mult.mul(this.player.darkmoney.add(10).log10());
+
+        if (this.isRankChallengeBonusActive(9)) {
+            const multbyac = D(50).div(this.player.tickspeed);
+            mult = mult.mul(multbyac);
+            if (multbyac.gt(1)) mult = mult.mul(multbyac);
+        }
+
+        this.commonmult = mult;
+    };
+
+    calcIncrementMult(mu, i, to, highest) {
+        let mult = mu.mul(this.commonmult);
+        if (!this.isChallengeActive(4))
+            mult = mult.mul(D(10).pow((i + 1) * (i - to)));
 
         mult = mult.mul(D(this.player.level.add(2).log2()).pow(i - to));
 
@@ -275,39 +300,21 @@ class Nig {
             }
         }
 
-        if (this.isChallengeBonusActive(3)) mult = mult.mul(D(2));
-        if (this.isRankChallengeBonusActive(3)) mult = mult.mul(D(3));
         if (i == 0 && this.isChallengeBonusActive(7)) {
             if (this.isRankChallengeBonusActive(7))
                 mult = mult.mul(this.strongSoftcap(this.player.maxlevelgained, D(100000)));
             else
                 mult = mult.mul(this.player.maxlevelgained.min(100000));
         }
-        mult = mult.mul(1 + this.memory * 0.25);
-        if (this.isRankChallengeBonusActive(11))
-            mult = mult.mul(D(2).pow(D(this.memory).div(12)));
-
-        if (this.player.onchallenge && this.isRankChallengeBonusActive(4)) {
-            let cnt = 0;
-            this.player.challenges.forEach(b => cnt += b ? 1 : 0);
-            mult = mult.mul(1 + cnt * 0.25);
-        }
 
         if (this.player.darkgenerators[i].gte(1))
             mult = mult.mul(i + 2 + this.player.darkgenerators[i].log10());
-        if (this.player.darkmoney.gte(1))
-            mult = mult.mul(this.player.darkmoney.add(10).log10());
-
-        if (this.isRankChallengeBonusActive(9)) {
-            const multbyac = D(50).div(this.player.tickspeed);
-            mult = mult.mul(multbyac);
-            if (multbyac.gt(1)) mult = mult.mul(multbyac);
-        }
 
         return mult;
     };
 
     calcGeneratorExpr(mu = D(1)) {
+        this.calcCommonMult();
         let highest = 0;
         for (let i = 0; i < 8; i++) if (this.player.generators[i].gt(0)) highest = i;
         let g = Array.from(new Array(9), (_, i) => new Array(Math.max(0, highest + 2 - i)).fill(D(0)));
@@ -479,27 +486,27 @@ class Nig {
     };
 
     isRewardToggleable(index) {
-        return this.player.challengebonuses[index] || (this.player.token >= this.challengedata.rewardcost[index]);
+        return this.player.challengebonuses[index] || (this.player.token >= itemdata.rewardcost[index]);
     };
     toggleReward(index) {
         if (this.isRewardToggleable(index)) {
             if (this.player.challengebonuses[index])
-                this.player.token += this.challengedata.rewardcost[index];
+                this.player.token += itemdata.rewardcost[index];
             else
-                this.player.token -= this.challengedata.rewardcost[index];
+                this.player.token -= itemdata.rewardcost[index];
             this.player.challengebonuses[index] = !this.player.challengebonuses[index];
             this.updateTickspeed();
         }
     };
     isRankRewardToggleable(index) {
-        return this.player.rankchallengebonuses[index] || (this.player.ranktoken >= this.challengedata.rewardcost[index]);
+        return this.player.rankchallengebonuses[index] || (this.player.ranktoken >= itemdata.rewardcost[index]);
     };
     toggleRankReward(index) {
         if (this.isRankRewardToggleable(index)) {
             if (this.player.rankchallengebonuses[index])
-                this.player.ranktoken += this.challengedata.rewardcost[index];
+                this.player.ranktoken += itemdata.rewardcost[index];
             else
-                this.player.ranktoken -= this.challengedata.rewardcost[index];
+                this.player.ranktoken -= itemdata.rewardcost[index];
             this.player.rankchallengebonuses[index] = !this.player.rankchallengebonuses[index];
             this.updateTickspeed();
         }
@@ -512,7 +519,7 @@ class Nig {
     };
     calcLevelitemCost(index) {
         const d = index + 1;
-        const cost = this.levelshopdata.itemcost[index].pow(this.player.levelitems[index] + 1);
+        const cost = itemdata.levelitemcost[index].pow(this.player.levelitems[index] + 1);
         let dec = 0;
         for (let i = 1; i <= 5; i++) {
             if (4 * i * i * d * d * d <= this.player.levelitembought) dec = i;
@@ -1006,7 +1013,7 @@ const app = Vue.createApp({
     data() {
         return {
             nig: new Nig(),
-            itemdata: new ItemData(),
+            itemdata: itemdata,
             shinechallengelength: [64, 96, 128, 160],
             brightnessrankchallengelength: [32, 64, 128],
             simulatedcheckpoints: Array.from(new Array(10), () => new Map()),
