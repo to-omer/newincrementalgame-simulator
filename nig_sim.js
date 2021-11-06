@@ -156,6 +156,7 @@ class Nig {
                 rankchallengebonuses: new Array(15).fill(false),
 
                 trophies: new Array(8).fill(false),
+                smalltrophies: new Array(100).fill(false),
 
                 levelitems: new Array(5).fill(0),
                 levelitembought: 0,
@@ -168,6 +169,7 @@ class Nig {
         this.players = new Array(10).fill().map(() => initialData());
         this.commonmult = D(1);
         this.memory = 0;
+        this.smallmemory = 0;
         this.worldopened = new Array(10).fill().map(() => false);
         this.world = 0;
     };
@@ -225,6 +227,7 @@ class Nig {
             rankchallengebonuses: numarr2boolarr(playerData.rankchallengebonuses, 15) ?? new Array(15).fill(false),
 
             trophies: playerData.trophies ?? new Array(8).fill(false),
+            smalltrophies: playerData.smalltrophies ?? new Array(100).fill(false),
 
             levelitems: playerData.levelitems ?? new Array(5).fill(0),
             levelitembought: playerData.levelitembought ?? 0,
@@ -234,6 +237,7 @@ class Nig {
         };
         this.checkTrophies();
         this.checkMemories();
+        this.checkSmallMemories();
         this.checkWorlds();
     };
 
@@ -263,7 +267,7 @@ class Nig {
         if (this.isChallengeBonusActive(3)) mult = mult.mul(D(2));
         if (this.isRankChallengeBonusActive(3)) mult = mult.mul(D(3));
 
-        mult = mult.mul(1 + this.memory * 0.25);
+        mult = mult.mul(1 + this.smallmemory * 0.01 + this.memory * 0.25);
         if (this.isRankChallengeBonusActive(11))
             mult = mult.mul(D(2).pow(D(this.memory).div(12)));
 
@@ -575,8 +579,13 @@ class Nig {
             }
         }
         gainlevel = gainlevel.round();
-        if (this.isChallengeBonusActive(12)) gainlevel = gainlevel.mul(D(2));
+        if (this.isChallengeBonusActive(12)) gainlevel = gainlevel.mul(2);
         return gainlevel;
+    };
+    calcGainRank() {
+        let gainrank = D(this.player.money.log10()).div(36 - 0.25 * this.countRemembers() - 1.2 * this.player.levelitems[4]).pow_base(2).round();
+        if (this.isRankChallengeBonusActive(12)) gainrank = gainrank.mul(3);
+        return gainrank;
     };
 
     resetLevel(_force, exit, challenge) {
@@ -649,14 +658,77 @@ class Nig {
         if (this.player.brightness > 0) this.player.trophies[5] = true;
         if (this.player.remember > 0) this.player.trophies[6] = true;
         if (this.world == 0 && this.countRemembers() > 0) this.player.trophies[6] = true;
+
+        if (this.player.money.gt(0)) this.player.smalltrophies[0] = true;
+        if (this.player.money.gt(777)) this.player.smalltrophies[1] = true;
+        if (this.player.money.gt(7777777)) this.player.smalltrophies[2] = true;
+        if (this.player.money.gt('1e19')) this.player.smalltrophies[3] = true;
+        if (this.player.money.gt('1e36')) this.player.smalltrophies[4] = true;
+        if (this.player.money.gt('1e73')) this.player.smalltrophies[5] = true;
+        if (this.player.money.gt('1e81')) this.player.smalltrophies[6] = true;
+        if (this.player.money.gt('1e303')) this.player.smalltrophies[7] = true;
+        if (this.player.generatorsBought[0].gt(0)) this.player.smalltrophies[8] = true;
+        if (this.player.generatorsBought[1].gt(0)) this.player.smalltrophies[9] = true;
+        if (this.player.generatorsBought[2].gt(0)) this.player.smalltrophies[10] = true;
+        if (this.player.generatorsBought[3].gt(0)) this.player.smalltrophies[11] = true;
+        if (this.player.generatorsBought[4].gt(0)) this.player.smalltrophies[12] = true;
+        if (this.player.generatorsBought[5].gt(0)) this.player.smalltrophies[13] = true;
+        if (this.player.generatorsBought[6].gt(0)) this.player.smalltrophies[14] = true;
+        if (this.player.generatorsBought[7].gt(0)) this.player.smalltrophies[15] = true;
+        if (this.player.acceleratorsBought[0].gt(0)) this.player.smalltrophies[16] = true;
+        if (this.player.acceleratorsBought[1].gt(0)) this.player.smalltrophies[17] = true;
+        if (this.player.acceleratorsBought[2].gt(0)) this.player.smalltrophies[18] = true;
+        if (this.player.acceleratorsBought[3].gt(0)) this.player.smalltrophies[19] = true;
+        if (this.player.acceleratorsBought[4].gt(0)) this.player.smalltrophies[20] = true;
+        if (this.player.acceleratorsBought[5].gt(0)) this.player.smalltrophies[21] = true;
+        if (this.player.acceleratorsBought[6].gt(0)) this.player.smalltrophies[22] = true;
+        if (this.player.acceleratorsBought[7].gt(0)) this.player.smalltrophies[23] = true;
+        if (this.player.levelresettime.gt(200)) this.player.smalltrophies[24] = true;
+        if (this.player.levelresettime.gt(999)) this.player.smalltrophies[25] = true;
+        if (this.player.challengecleared.includes(128)) this.player.smalltrophies[26] = true;
+        if (this.player.challengecleared.includes(64)) this.player.smalltrophies[27] = true;
+        if (this.player.challengecleared.includes(32)) this.player.smalltrophies[28] = true;
+        if (this.player.challengecleared.includes(16)) this.player.smalltrophies[29] = true;
+        if (this.player.challengecleared.includes(8)) this.player.smalltrophies[30] = true;
+        if (this.player.challengecleared.includes(4)) this.player.smalltrophies[31] = true;
+        if (this.player.challengecleared.includes(2)) this.player.smalltrophies[32] = true;
+        if (this.player.challengecleared.includes(1)) this.player.smalltrophies[33] = true;
+        if (this.player.challengecleared.length >= 32) this.player.smalltrophies[34] = true;
+        if (this.player.challengecleared.length >= 64) this.player.smalltrophies[35] = true;
+        if (this.player.challengecleared.length >= 96) this.player.smalltrophies[36] = true;
+        if (this.player.challengecleared.length >= 128) this.player.smalltrophies[37] = true;
+        if (this.player.challengecleared.length >= 160) this.player.smalltrophies[38] = true;
+        if (this.player.challengecleared.length >= 192) this.player.smalltrophies[39] = true;
+        if (this.player.challengecleared.length >= 224) this.player.smalltrophies[40] = true;
+        if (this.player.challengecleared.length >= 255) this.player.smalltrophies[41] = true;
+        if (this.player.rankresettime.gt(1)) this.player.smalltrophies[42] = true;
+        if (this.player.rankresettime.gt(4)) this.player.smalltrophies[43] = true;
+        if (this.player.rankresettime.gt(9)) this.player.smalltrophies[44] = true;
+        if (this.player.rankresettime.gt(99)) this.player.smalltrophies[45] = true;
+        if (this.player.rankresettime.gt(999)) this.player.smalltrophies[46] = true;
+        if (this.player.levelitembought >= 4) this.player.smalltrophies[47] = true;
+        if (this.player.levelitembought >= 108) this.player.smalltrophies[48] = true;
+        if (this.player.levelitembought >= 256) this.player.smalltrophies[49] = true;
+        if (this.player.levelitembought >= 1728) this.player.smalltrophies[50] = true;
+        if (this.player.levelitembought >= 12500) this.player.smalltrophies[51] = true;
+        if (this.player.shine >= 100) this.player.smalltrophies[52] = true;
+        if (this.player.shine >= 1000) this.player.smalltrophies[53] = true;
+        if (this.player.shine >= 10000) this.player.smalltrophies[54] = true;
+        if (this.player.shine >= 100000) this.player.smalltrophies[55] = true;
+        if (this.player.shine >= 1000000) this.player.smalltrophies[56] = true;
+        if (this.player.shine >= 10000000) this.player.smalltrophies[57] = true;
+        // if (this.exported.length >= 2) this.player.smalltrophies[58] = true;
+        // if (this.player.tweeting.length >= 2) this.player.smalltrophies[59] = true;
     };
     checkMemories() {
-        let cnt = 0;
+        this.memory = 0;
         for (let i = 0; i < 10; i++) {
             if (this.world == i) continue;
-            this.players[i].trophies.forEach(t => cnt += t ? 1 : 0);
+            this.memory += this.players[i].trophies.reduce((x, y) => x + (y ? 1 : 0), 0);
         }
-        this.memory = cnt;
+    };
+    checkSmallMemories() {
+        this.smallmemory = this.player.smalltrophies.reduce((x, y) => x + (y ? 1 : 0), 0);
     };
     countRemembers() {
         let cnt = 0;
@@ -669,7 +741,7 @@ class Nig {
         if (this.players[0].challengecleared.includes(238)) this.worldopened[1] = true;
         if (this.players[0].challengecleared.length >= 100) this.worldopened[2] = true;
         if (this.players[0].rankchallengecleared.length >= 16) this.worldopened[3] = true;
-        if (this.players[0].levelitembought >= 100000) this.worldopened[4] = true;
+        if (this.players[0].levelitembought >= 12500) this.worldopened[4] = true;
         if (D(this.players[0].darkmoney).gte('1e8')) this.worldopened[5] = true;
         if (D(this.players[0].rank).gte(262142)) this.worldopened[6] = true;
         if (this.players[0].rankchallengecleared.includes(238)) this.worldopened[7] = true;
@@ -701,7 +773,7 @@ class Nig {
                 return this.searchLowerBound(value, D(hasc0 ? '1e24' : '1e18'));
             } else if (target == 'rankreset') {
                 value = value.ceil();
-                return D(value.sub(0.5).log2()).mul(36 - 1.2 * this.player.levelitems[4]).pow_base(10).max(this.resetRankborder());
+                return D(value.sub(0.5).log2()).mul(36 - 0.25 * this.countRemembers() - 1.2 * this.player.levelitems[4]).pow_base(10).max(this.resetRankborder());
             } else if (target == 'input') {
                 return value;
             }
