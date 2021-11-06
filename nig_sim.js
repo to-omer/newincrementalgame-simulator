@@ -780,7 +780,7 @@ class Nig {
         if (this.player.money.gte(tmoney)) return { ticks: D(0), sec: D(0) };
         if (tmoney.eq(D('Infinity'))) return { ticks: D('Infinity'), sec: D('Infinity') };
         if (this.isRankChallengeBonusActive(9)) {
-            const previnfo = { money: this.player.money, generators: this.player.generators, tickspeed: this.player.tickspeed };
+            const previnfo = { money: this.player.money, generators: this.player.generators.slice(), tickspeed: this.player.tickspeed };
             const aexpr = this.calcAcceleratorExpr();
             let challengebonusescount = 0;
             this.player.challengebonuses.forEach(cb => challengebonusescount += cb ? 1 : 0);
