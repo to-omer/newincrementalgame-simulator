@@ -1056,8 +1056,8 @@ class Nig {
                 for (let i = 0; i < 2; i++) if (this.player.challengebonuses[i]) this.toggleReward(i);
                 for (let i = 0; i < 2; i++) if (this.player.rankchallengebonuses[i]) this.toggleRankReward(i);
 
-                challengebonuses.forEach(c => this.toggleReward(c));
-                rankchallengebonuses.forEach(c => this.toggleRankReward(c));
+                challengebonuses.forEach(c => { if (!this.player.challengebonuses[c]) this.toggleReward(c) });
+                rankchallengebonuses.forEach(c => { if (!this.player.rankchallengebonuses[c]) this.toggleRankReward(c) });
 
                 let checkpoints = [rank ? this.resetRankborder() : D(this.isChallengeActive(0) ? '1e24' : '1e18')];
                 let res = this.simulate(checkpoints)[0];
