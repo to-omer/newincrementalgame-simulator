@@ -1055,9 +1055,10 @@ class Nig {
                 this.startChallenge();
                 for (let i = 0; i < 2; i++) if (this.player.challengebonuses[i]) this.toggleReward(i);
                 for (let i = 0; i < 2; i++) if (this.player.rankchallengebonuses[i]) this.toggleRankReward(i);
+                if (!config.searchChallengeBonuses && this.player.challengebonuses[4]) this.toggleReward(4);
 
-                challengebonuses.forEach(c => { if (!this.player.challengebonuses[c]) this.toggleReward(c) });
-                rankchallengebonuses.forEach(c => { if (!this.player.rankchallengebonuses[c]) this.toggleRankReward(c) });
+                challengebonuses.forEach(c => this.toggleReward(c));
+                rankchallengebonuses.forEach(c => this.toggleRankReward(c));
 
                 let checkpoints = [rank ? this.resetRankborder() : D(this.isChallengeActive(0) ? '1e24' : '1e18')];
                 let res = this.simulate(checkpoints)[0];
@@ -1355,7 +1356,7 @@ const app = Vue.createApp({
                 if (!update) update |= !this.challengeConfig.searchChallengeBonuses && sim[this.nig.world][challengeid].secminimum.challengebonuses !== new Array(15).fill().map((_, i) => i).filter(i => this.nig.player.challengebonuses[i]);
                 if (!update) update |= !this.challengeConfig.searchRankChallengeBonuses && sim[this.nig.world][challengeid].secminimum.rankchallengebonuses !== new Array(15).fill().map((_, i) => i).filter(i => this.nig.player.rankchallengebonuses[i]);
 
-                if (update) sim[this.nig.world][challengeid] = this.nig.clone().simulatechallenges(challengeid, rank, this.challengeConfig);
+                if (update) sim[this.nig.world][challengeid] = this.nig.clone().simulatechallenges(challengeid, rank, JSON.parse(JSON.stringify(this.challengeConfig)));
                 if (rec) this.simulatechallenges(challengeid + 1, rank, rec);
             }, 0);
         },
