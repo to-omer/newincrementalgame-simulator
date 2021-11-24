@@ -572,7 +572,7 @@ class Nig {
                 let persent = D(1).sub(gainlevel.sub(glmin).div(glmax.sub(glmin)));
                 persent = persent.pow(1 + this.player.levelitems[0]);
                 persent = D(1).sub(persent);
-                if (persent.lt('1e-5')) {
+                if (gainlevel.neq(glmin) && persent.lt('1e-5')) {
                     gainlevel = gainlevel.mul(1 + this.player.levelitems[0]);
                 } else {
                     gainlevel = glmax.sub(glmin).mul(persent).add(glmin);
