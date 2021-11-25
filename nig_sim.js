@@ -105,6 +105,12 @@ class MaximumBonuses {
                         cs.push(effectivechallengebonuses[j]);
                     }
                 }
+                if (rank) {
+                    const mask34679 = 0b11111;
+                    if ((i & mask34679) == mask34679 && mxtoken - costs[i] + itemdata.rewardcost[9] < 32) {
+                        challengebonusescandidates.push(cs.filter(c => c !== 9));
+                    }
+                }
                 challengebonusescandidates.push(cs);
             }
         }
