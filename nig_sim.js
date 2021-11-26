@@ -1225,8 +1225,37 @@ const app = Vue.createApp({
                 return content;
             };
         },
-        tmoney() {
-            return this.nig.targetmoney(this.checkpointtarget, this.checkpointvalue);
+        tmoneys() {
+            let [start, stop, opstep] = this.checkpointvalue.split(':', 3);
+            let [op, step] = opstep === undefined ? (this.checkpointtarget === 'input' ? ['*', '10'] : ['+', '1']) : opstep.startsWith('*') ? [opstep[0], opstep.slice(1)] : ['+', opstep];
+            try {
+                if (start !== undefined) start = D(start.trim());
+                if (stop !== undefined) stop = D(stop.trim());
+                if (step !== undefined) step = D(step.trim());
+            } catch (error) {
+                return [];
+            };
+            let arr = [];
+            if (stop !== undefined) {
+                while (arr.length < 100 && start.lte(stop)) {
+                    let t = this.nig.targetmoney(this.checkpointtarget, start);
+                    if (t.gte(0)) arr.push(t);
+                    start = op === '*' ? start.mul(step) : start.add(step);
+                }
+            } else {
+                let t = this.nig.targetmoney(this.checkpointtarget, start);
+                if (t.gte(0)) arr.push(t);
+            }
+            return arr;
+        },
+        tmoneysDesc() {
+            if (this.tmoneys.length === 0) {
+                return 'Invalid';
+            } else if (this.tmoneys.length === 1) {
+                return this.tmoneys[0].toExponential(1) + ' ポイント';
+            } else {
+                return this.tmoneys[0].toExponential(1) + '～' + this.tmoneys[this.tmoneys.length - 1].toExponential(1) + ' ポイント(' + this.tmoneys.length + ')';
+            }
         },
         gexpr() {
             return this.nig.calcGeneratorExpr();
@@ -1341,7 +1370,7 @@ const app = Vue.createApp({
             if (this.autosimulatecheckpoints) this.simulatecheckpoints();
         },
         addcheckpoint() {
-            if (this.tmoney.gt(0)) this.checkpoints.push(this.tmoney);
+            this.tmoneys.forEach(tmoney => this.checkpoints.push(tmoney));
         },
         removecheckpoint(i) {
             this.checkpoints.splice(i, 1);
