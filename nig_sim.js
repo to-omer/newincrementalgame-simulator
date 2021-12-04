@@ -173,7 +173,9 @@ class Nig {
         };
         this.player = initialData();
         this.players = new Array(10).fill().map(() => initialData());
+        this.highest = 0;
         this.commonmult = D(1);
+        this.incrementalmults = new Array(8).fill(D(1));
         this.multbyac = D(1);
         this.memory = 0;
         this.smallmemory = 0;
@@ -296,13 +298,8 @@ class Nig {
         this.commonmult = mult;
     };
 
-    calcIncrementMult(mu, i, to, highest) {
-        let mult = mu.mul(this.commonmult);
-        if (!this.isChallengeActive(4))
-            mult = mult.mul(D(10).pow((i + 1) * (i - to)));
-
-        mult = mult.mul(D(this.player.level.add(2).log2()).pow(i - to));
-
+    calcBasicIncrementMult(i, highest) {
+        let mult = this.commonmult;
         if (!this.isChallengeActive(2)) {
             if ((i < highest || this.isChallengeBonusActive(2)) && this.player.generatorsBought[i].gt(0)) {
                 let mm = this.player.generatorsBought[i];
@@ -321,6 +318,14 @@ class Nig {
         if (this.player.darkgenerators[i].gte(1))
             mult = mult.mul(i + 2 + this.player.darkgenerators[i].log10());
 
+        this.incrementalmults[i] = mult;
+    };
+
+    calcIncrementMult(mu, i, to) {
+        let mult = mu.mul(this.incrementalmults[i]);
+        if (!this.isChallengeActive(4))
+            mult = mult.mul(D(10).pow((i + 1) * (i - to)));
+        mult = mult.mul(D(this.player.level.add(2).log2()).pow(i - to));
         return mult;
     };
 
@@ -328,21 +333,22 @@ class Nig {
         this.calcCommonMult();
         let highest = 0;
         for (let i = 0; i < 8; i++) if (this.player.generators[i].gt(0)) highest = i;
+        for (let i = 0; i < 8; i++) this.calcBasicIncrementMult(i, highest);
         let g = Array.from(new Array(9), (_, i) => new Array(Math.max(0, highest + 2 - i)).fill(D(0)));
         g[0][0] = this.player.money;
         for (let i = 0; i <= highest; i++) g[i + 1][0] = this.player.generators[i];
         for (let i = highest + 1; i-- > 0;) {
             if (!this.isChallengeBonusActive(13)) {
                 const to = this.player.generatorsMode[i];
-                const mult = this.calcIncrementMult(mu, i, to, highest);
+                const mult = this.calcIncrementMult(mu, i, to);
                 g[i + 1].forEach((gg, j) => g[to][j + 1] = g[to][j + 1].add(gg.mul(mult)));
             } else if (this.isChallengeActive(3)) {
                 const to = 0;
-                const mult = this.calcIncrementMult(mu, i, to, highest).mul(i + 1);
+                const mult = this.calcIncrementMult(mu, i, to).mul(i + 1);
                 g[i + 1].forEach((gg, j) => g[to][j + 1] = g[to][j + 1].add(gg.mul(mult)));
             } else {
                 for (let to = 0; to <= i; to++) {
-                    const mult = this.calcIncrementMult(mu, i, to, highest);
+                    const mult = this.calcIncrementMult(mu, i, to);
                     g[i + 1].forEach((gg, j) => g[to][j + 1] = g[to][j + 1].add(gg.mul(mult)));
                 }
             }
@@ -726,6 +732,31 @@ class Nig {
         if (this.player.shine >= 10000000) this.player.smalltrophies[57] = true;
         // if (this.exported.length >= 2) this.player.smalltrophies[58] = true;
         // if (this.player.tweeting.length >= 2) this.player.smalltrophies[59] = true;
+        if (this.player.darkgenerators[0].gte(1)) this.player.smalltrophies[60] = true;
+        if (this.player.darkgenerators[1].gte(1)) this.player.smalltrophies[61] = true;
+        if (this.player.darkgenerators[2].gte(1)) this.player.smalltrophies[62] = true;
+        if (this.player.darkgenerators[3].gte(1)) this.player.smalltrophies[63] = true;
+        if (this.player.darkgenerators[4].gte(1)) this.player.smalltrophies[64] = true;
+        if (this.player.darkgenerators[5].gte(1)) this.player.smalltrophies[65] = true;
+        if (this.player.darkgenerators[6].gte(1)) this.player.smalltrophies[66] = true;
+        if (this.player.darkgenerators[7].gte(1)) this.player.smalltrophies[67] = true;
+        if (this.player.rankchallengecleared.length >= 32) this.player.smalltrophies[68] = true;
+        if (this.player.rankchallengecleared.length >= 64) this.player.smalltrophies[69] = true;
+        if (this.player.rankchallengecleared.length >= 96) this.player.smalltrophies[70] = true;
+        if (this.player.rankchallengecleared.length >= 128) this.player.smalltrophies[71] = true;
+        if (this.player.rankchallengecleared.length >= 160) this.player.smalltrophies[72] = true;
+        if (this.player.rankchallengecleared.length >= 192) this.player.smalltrophies[73] = true;
+        if (this.player.rankchallengecleared.length >= 224) this.player.smalltrophies[74] = true;
+        if (this.player.rankchallengecleared.length >= 255) this.player.smalltrophies[75] = true;
+        if (this.player.brightness >= 10) this.player.smalltrophies[76] = true;
+        if (this.player.brightness >= 100) this.player.smalltrophies[77] = true;
+        if (this.player.brightness >= 1000) this.player.smalltrophies[78] = true;
+        if (this.player.brightness >= 10000) this.player.smalltrophies[79] = true;
+        if (this.player.darkmoney.gte(1)) this.player.smalltrophies[80] = true;
+        if (this.player.darkmoney.gte(777)) this.player.smalltrophies[81] = true;
+        if (this.player.darkmoney.gte(7777777)) this.player.smalltrophies[82] = true;
+        if (this.player.darkmoney.gte("1e18")) this.player.smalltrophies[83] = true;
+        if (this.player.darkmoney.gte("1e72")) this.player.smalltrophies[84] = true;
     };
     checkMemories() {
         this.memory = 0;
@@ -1112,7 +1143,7 @@ const app = Vue.createApp({
         return {
             nig: new Nig(),
             itemdata: itemdata,
-            shinechallengelength: [64, 96, 128, 160],
+            shinechallengelength: [64, 96, 128, 160, 192, 224],
             brightnessrankchallengelength: [32, 64, 128],
             simulatedcheckpoints: Array.from(new Array(10), () => new Map()),
             challengesimulated: Array.from(new Array(10), () => new Array(256).fill(null)),
