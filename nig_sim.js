@@ -1149,6 +1149,7 @@ const app = Vue.createApp({
             challengesimulated: Array.from(new Array(10), () => new Array(256).fill(null)),
             rankchallengesimulated: Array.from(new Array(10), () => new Array(256).fill(null)),
             checkpoints: [D('1e18'), D('1e72')],
+            cpsimulatedtime: Date.now(),
             sampletick: [1, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9],
             sampleticklabel: ['1', '1e1', '1e2', '1e3', '1e4', '1e5', '1e6', '1e7', '1e8', '1e9'],
             sampletime: [1, 60, 3600, 86400, 2592000, 31536000, 3153600000],
@@ -1252,7 +1253,7 @@ const app = Vue.createApp({
                 const sec = res.sec.add(res.tick.mul(this.procmspertick * 0.001));
                 let content = checkpoint.toExponential(3) + ' ポイントまで ' + res.tick.toExponential(3) + ' ticks';
                 content += ' (' + sec.toExponential(3) + ' sec)';
-                content += ' ' + (new Date(Date.now() + Number(sec.mul(1000).toExponential(20)))).toLocaleString() + ' に達成';
+                content += ' ' + (new Date(this.cpsimulatedtime + Number(sec.mul(1000).toExponential(20)))).toLocaleString() + ' に達成';
                 return content;
             };
         },
@@ -1410,6 +1411,7 @@ const app = Vue.createApp({
             setTimeout(() => {
                 if (this.checkpoints.length == 0) return;
                 const res = this.nig.clone().simulate(this.checkpoints);
+                this.cpsimulatedtime = Date.now();
                 res.forEach((r, i) => this.simulatedcheckpoints[this.nig.world].set(this.checkpoints[i], r));
             }, 0);
         },
