@@ -412,10 +412,9 @@
         </div>
         <div class="input-group">
           <select class="form-select" v-model="checkpointtarget" aria-label="checkpoint target">
-            <option disabled value="">選択</option>
+            <option value="point" selected>ポイント</option>
             <option value="levelreset">段位リセット</option>
             <option value="rankreset">階位リセット</option>
-            <option value="input">入力</option>
           </select>
           <span class="input-group-text" v-if="checkpointtarget=='levelreset' || checkpointtarget=='rankreset'">で</span>
           <input type="text" class="form-control" v-model="checkpointvalue" placeholder="start[:stop[:[*]step]]"

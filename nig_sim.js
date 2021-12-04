@@ -595,8 +595,9 @@ class Nig {
         if (this.isChallengeBonusActive(12)) gainlevel = gainlevel.mul(2);
         return gainlevel;
     };
-    calcGainRank() {
-        let gainrank = D(this.player.money.log10()).div(36 - 0.25 * this.countRemembers() - 1.2 * this.player.levelitems[4]).pow_base(2).round();
+    calcGainRank(x) {
+        const money = x === undefined ? this.player.money : x;
+        let gainrank = D(money.log10()).div(36 - 0.25 * this.countRemembers() - 1.2 * this.player.levelitems[4]).pow_base(2).round();
         if (this.isRankChallengeBonusActive(12)) gainrank = gainrank.mul(3);
         return gainrank;
     };
@@ -786,14 +787,21 @@ class Nig {
         if (this.players[0].challengecleared.length >= 200) this.worldopened[8] = true;
     };
 
-    searchLowerBound(value, l) {
-        if (this.calcGainLevel(l).gte(value)) return l;
+    searchLowerBound(value, l, target) {
+        const f = x => {
+            if (target === 'levelreset') {
+                return this.calcGainLevel(x);
+            } else if (target === 'rankreset') {
+                return this.calcGainRank(x);
+            }
+        };
+        if (f(l).gte(value)) return l;
         let r = l.mul(l);
         let cnt = 0;
-        while (this.calcGainLevel(r).lt(value)) r = r.mul(r);
+        while (f(r).lt(value)) r = r.mul(r);
         while (l.add(1).lt(r) && cnt < 60) {
             const m = r.sub(l).lt(4) ? l.add(r).div(2).floor() : l.mul(r).sqrt().floor();
-            if (this.calcGainLevel(m).gte(value))
+            if (f(m).gte(value))
                 r = m;
             else
                 l = m;
@@ -806,13 +814,13 @@ class Nig {
         try {
             let value = D(input);
             const hasc0 = this.isChallengeActive(0);
-            if (target == 'levelreset') {
+            if (target === 'levelreset') {
                 value = value.ceil();
-                return this.searchLowerBound(value, D(hasc0 ? '1e24' : '1e18'));
+                return this.searchLowerBound(value, D(hasc0 ? '1e24' : '1e18'), target);
             } else if (target == 'rankreset') {
                 value = value.ceil();
-                return D(value.sub(0.5).log2()).mul(36 - 0.25 * this.countRemembers() - 1.2 * this.player.levelitems[4]).pow_base(10).max(this.resetRankborder());
-            } else if (target == 'input') {
+                return this.searchLowerBound(value, this.resetRankborder(), target);
+            } else if (target == 'point') {
                 return value;
             }
         } catch (error) {
@@ -1163,7 +1171,7 @@ const app = Vue.createApp({
                 toggleBonuses: true,
             },
             autosimulatecheckpoints: false,
-            checkpointtarget: '',
+            checkpointtarget: 'point',
             checkpointvalue: '',
             procmspertick: 0,
         }
@@ -1259,7 +1267,7 @@ const app = Vue.createApp({
         },
         tmoneys() {
             let [start, stop, opstep] = this.checkpointvalue.split(':', 3);
-            let [op, step] = opstep === undefined ? (this.checkpointtarget === 'input' ? ['*', '10'] : ['+', '1']) : opstep.startsWith('*') ? [opstep[0], opstep.slice(1)] : ['+', opstep];
+            let [op, step] = opstep === undefined ? (this.checkpointtarget === 'point' ? ['*', '10'] : ['+', '1']) : opstep.startsWith('*') ? [opstep[0], opstep.slice(1)] : ['+', opstep];
             try {
                 if (start !== undefined) start = D(start.trim());
                 if (stop !== undefined) stop = D(stop.trim());
@@ -1271,12 +1279,12 @@ const app = Vue.createApp({
             if (stop !== undefined) {
                 while (arr.length < 100 && start.lte(stop)) {
                     let t = this.nig.targetmoney(this.checkpointtarget, start);
-                    if (t.gte(0)) arr.push(t);
+                    if (t.gt(0)) arr.push(t);
                     start = op === '*' ? start.mul(step) : start.add(step);
                 }
             } else {
                 let t = this.nig.targetmoney(this.checkpointtarget, start);
-                if (t.gte(0)) arr.push(t);
+                if (t.gt(0)) arr.push(t);
             }
             return arr;
         },
