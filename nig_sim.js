@@ -836,6 +836,25 @@ class Nig {
         if (this.players[0].rankchallengecleared.includes(238)) this.worldopened[7] = true;
         if (this.players[0].challengecleared.length >= 200) this.worldopened[8] = true;
     };
+    toggleChip(i) {
+        let oldchip = this.player.setchip[i];
+        for (let j = oldchip + 1; j <= 3; j++) {
+            if (j === 0 || this.player.chip[j - 1] > 0) {
+                if (oldchip !== 0) this.player.chip[oldchip - 1] += 1;
+                this.player.setchip[i] = j;
+                if (j !== 0) this.player.chip[j - 1] -= 1;
+                return;
+            }
+        }
+        for (let j = 0; j < oldchip; j++) {
+            if (j === 0 || this.player.chip[j - 1] > 0) {
+                if (oldchip !== 0) this.player.chip[oldchip - 1] += 1;
+                this.player.setchip[i] = j;
+                if (j !== 0) this.player.chip[j - 1] -= 1;
+                return;
+            }
+        }
+    };
     configChip(i, j) {
         let oldchip = this.player.setchip[i];
         if (oldchip !== 0) this.player.chip[oldchip - 1] += 1;
@@ -1452,6 +1471,10 @@ const app = Vue.createApp({
             }
             this.clearCheckpointsCache();
         },
+        toggleChip(i) {
+            this.nig.toggleChip(i);
+            this.clearAllCache();
+        },
         configChip(i, j) {
             this.nig.configChip(i, j);
             this.clearAllCache();
@@ -1518,6 +1541,20 @@ const app = Vue.createApp({
                 'btn-dark': cond,
                 'btn-outline-dark': !cond,
             };
+        },
+        chipcoloredbuttoncls(j) {
+            const dark = '#212529';
+            if (j === 0) {
+                return {
+                    // 'color': dark,
+                    // 'background-color': dark,
+                };
+            } else {
+                let color = ['#cd7f32', 'silver', 'gold'][j - 1];
+                return {
+                    'background-color': color,
+                };
+            }
         },
     },
     mounted() {

@@ -194,7 +194,7 @@
 
     <div class="collapse" id="levelInfo">
       <div class="card card-body">
-        <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center flex-wrap">
           <div>挑戦</div>
           <div v-for="i in 8" :key="i" class="tooltipcell">
             <button type="button" class="btn" @click="nig.configChallenge(i-1)"
@@ -212,7 +212,7 @@
           </div>
         </div>
         <div>勲章: {{ nig.player.token }}</div>
-        <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center flex-wrap">
           <div>効力</div>
           <div v-for="i in 15" :key="i" class="tooltipcell">
             <button type="button" class="btn" @click="toggleReward(i-1)"
@@ -225,7 +225,7 @@
           </div>
         </div>
         <div v-if="nig.player.rankchallengecleared.length>0">大勲章: {{ nig.player.ranktoken }}</div>
-        <div v-if="nig.player.rankchallengecleared.length>0" class="d-flex align-items-center">
+        <div v-if="nig.player.rankchallengecleared.length>0" class="d-flex align-items-center flex-wrap">
           <div>上位効力</div>
           <div v-for="i in 15" :key="i" class="tooltipcell">
             <button type="button" class="btn" @click="toggleRankReward(i-1)"
@@ -293,12 +293,13 @@
             </span>
           </span>
         </div>
-        <div>
-          <div v-for="i in 32" :key="i">
-            鋳片効力{{ i }}: {{ itemdata.chipbonusname[i-1] }}
-            <button v-for="j in 3" :key="j" type="button" class="btn btn-sm"
-              :class="buttonselectedcls(nig.player.setchip[i-1]==j)" @click="configChip(i-1,j)"
-              :disabled="nig.player.chip[j-1]<=0&&nig.player.setchip[i-1]!=j">{{ itemdata.chipname[j-1] }}</button>
+        <div class="d-flex align-items-center flex-wrap">
+          鋳片効力
+          <div v-for="i in 32" :key="i" class="tooltipcell">
+            <button type="button" class="btn btn-outline-dark" :style="chipcoloredbuttoncls(nig.player.setchip[i-1])"
+              @click="toggleChip(i-1)">{{ i }} {{ nig.player.setchip[i-1]==0 ? '　' :
+              itemdata.chipname[nig.player.setchip[i-1]-1][0] }}</button>
+            <span class="uptooltip">{{ itemdata.chipbonusname[i-1] }}</span>
           </div>
         </div>
       </div>
