@@ -66,7 +66,7 @@ class ItemData {
             '階位の入手量が少しだけ増加します',
         ];
         this.levelitemcost = [D('1e1'), D('1e2'), D('1e3'), D('1e4'), D('1e5')];
-        this.chipname = ['銅片', '銀片', '金片'];
+        this.chipname = ['銅片', '銀片', '金片', '白金片'];
         this.chipbonusname = [
             '発生器効率',
             '発生器1効率',
@@ -87,19 +87,27 @@ class ItemData {
             '時間加速器7効率',
             '時間加速器8効率',
             '段位入手量',
-            '段位効率(工事中)',
+            '段位効率',
             '段位リセット入手量(工事中)',
             '段位リセット効率(工事中)',
             '階位入手量(工事中)',
             '階位効率(工事中)',
-            '階位リセット入手量(工事中)',
+            '階位リセット入手量',
             '階位リセット効率(工事中)',
             '段位効力1効率',
             '段位効力2効率',
-            '段位効力3効率(工事中)',
+            '段位効力3効率',
             '段位効力5効率(工事中)',
-            '輝き入手割合(工事中)',
+            '輝き入手割合',
             '輝き使用効率(工事中)',
+            '裏発生器1強化(工事中)',
+            '裏発生器2強化(工事中)',
+            '裏発生器3強化(工事中)',
+            '裏発生器4強化(工事中)',
+            '裏発生器5強化(工事中)',
+            '裏発生器6強化(工事中)',
+            '裏発生器7強化(工事中)',
+            '裏発生器8強化(工事中)',
         ];
     }
 };
@@ -218,6 +226,7 @@ class Nig {
         this.memory = 0;
         this.smallmemory = 0;
         this.worldopened = new Array(10).fill().map(() => false);
+        this.chipused = [0, 0, 0, 0];
         this.world = 0;
     };
 
@@ -288,6 +297,7 @@ class Nig {
         this.checkTrophies();
         this.checkMemories();
         this.checkSmallMemories();
+        this.checkUsedChips();
         this.checkWorlds();
         this.updateTickspeed();
     };
@@ -312,8 +322,10 @@ class Nig {
 
     calcCommonMult() {
         let mult = D(1);
-        if (!this.isChallengeActive(7))
-            mult = mult.mul(this.softCap(this.player.levelresettime.add(1), D(100).mul(this.player.levelitems[2] + 1)));
+        if (!this.isChallengeActive(7)) {
+            const cap = D(100).mul(this.player.levelitems[2] * (1 + this.player.setchip[28] * 0.3) + 1);
+            mult = mult.mul(this.softCap(this.player.levelresettime.add(1), cap));
+        }
 
         if (this.isChallengeBonusActive(3)) mult = mult.mul(D(2));
         if (this.isRankChallengeBonusActive(3)) mult = mult.mul(D(3));
@@ -335,6 +347,11 @@ class Nig {
             mult = mult.mul(this.multbyac);
             if (this.multbyac.gt(1)) mult = mult.mul(this.multbyac);
         }
+
+        mult = mult.mul(1 + this.player.setchip[0] * 0.05);
+
+        let d = new Date();
+        if (d.getMonth() == 0 && d.getDate() <= 7) mult = mult.mul(5);
 
         this.commonmult = mult;
     };
@@ -359,7 +376,7 @@ class Nig {
         if (this.player.darkgenerators[i].gte(1))
             mult = mult.mul(i + 2 + this.player.darkgenerators[i].log10());
 
-        mult = mult.mul(1 + this.player.setchip[0] * 0.05);
+        mult = mult.mul(1 + this.player.setchip[i + 1] * 0.2);
 
         this.incrementalmults[i] = mult;
     };
@@ -368,8 +385,8 @@ class Nig {
         let mult = mu.mul(this.incrementalmults[i]);
         if (!this.isChallengeActive(4))
             mult = mult.mul(D(10).pow((i + 1) * (i - to)));
-        mult = mult.mul(D(this.player.level.add(2).log2()).pow(i - to));
-        mult = mult.mul(1 + this.player.setchip[i + 1] * 0.2);
+        let lv = this.player.level.pow(1 + 0.5 * this.player.setchip[19]);
+        mult = mult.mul(D(lv.add(2).log2()).pow(i - to));
         return mult;
     };
 
@@ -654,7 +671,7 @@ class Nig {
 
     resetLevel(_force, exit, challenge) {
         const gainlevel = this.calcGainLevel();
-        const gainlevelreset = this.player.rankresettime.add(1).mul(D(exit ? 0 : this.isChallengeBonusActive(8) ? 2 : 1));
+        const gainlevelreset = this.player.rankresettime.add(1).mul(1 + this.player.setchip[20]).mul(D(exit ? 0 : this.isChallengeBonusActive(8) ? 2 : 1));
 
         if (this.player.onchallenge) {
             this.player.onchallenge = false;
@@ -728,7 +745,7 @@ class Nig {
         if (this.player.money.gt(7777777)) this.player.smalltrophies[2] = true;
         if (this.player.money.gt('1e19')) this.player.smalltrophies[3] = true;
         if (this.player.money.gt('1e36')) this.player.smalltrophies[4] = true;
-        if (this.player.money.gt('1e73')) this.player.smalltrophies[5] = true;
+        if (this.player.money.gt('1e77')) this.player.smalltrophies[5] = true;
         if (this.player.money.gt('1e81')) this.player.smalltrophies[6] = true;
         if (this.player.money.gt('1e303')) this.player.smalltrophies[7] = true;
         if (this.player.generatorsBought[0].gt(0)) this.player.smalltrophies[8] = true;
@@ -838,30 +855,24 @@ class Nig {
     };
     toggleChip(i) {
         let oldchip = this.player.setchip[i];
-        for (let j = oldchip + 1; j <= 3; j++) {
-            if (j === 0 || this.player.chip[j - 1] > 0) {
-                if (oldchip !== 0) this.player.chip[oldchip - 1] += 1;
-                this.player.setchip[i] = j;
-                if (j !== 0) this.player.chip[j - 1] -= 1;
-                return;
-            }
-        }
-        for (let j = 0; j < oldchip; j++) {
-            if (j === 0 || this.player.chip[j - 1] > 0) {
-                if (oldchip !== 0) this.player.chip[oldchip - 1] += 1;
-                this.player.setchip[i] = j;
-                if (j !== 0) this.player.chip[j - 1] -= 1;
-                return;
-            }
-        }
+        for (let j = oldchip + 1; j <= 4; j++) if (this.configChip(i, j)) return true;
+        for (let j = 0; j < oldchip; j++) if (this.configChip(i, j)) return true;
+        return false;
     };
     configChip(i, j) {
-        let oldchip = this.player.setchip[i];
-        if (oldchip !== 0) this.player.chip[oldchip - 1] += 1;
-        this.player.setchip[i] = 0;
-        if (oldchip !== j) {
-            this.player.setchip[i] = j;
-            if (j !== 0) this.player.chip[j - 1] -= 1;
+        if (this.player.setchip[i] == j) return false;
+        if (this.player.chip[j - 1] <= this.chipused[j - 1]) return false;
+        let oldchip = this.player.setchip[i] - 1;
+        if (oldchip != -1) this.player.chip[oldchip] = this.player.chip[oldchip] + this.chipused[oldchip];
+        this.player.setchip[i] = j;
+        if (j != 0) this.player.chip[j - 1] = this.player.chip[j - 1] - (this.chipused[j - 1] + 1);
+        this.checkUsedChips();
+        return true;
+    };
+    checkUsedChips() {
+        this.chipused.fill(0);
+        for (let v of this.player.setchip) {
+            if (v != 0) this.chipused[v - 1] = this.chipused[v - 1] + 1;
         }
     };
 
@@ -1543,14 +1554,10 @@ const app = Vue.createApp({
             };
         },
         chipcoloredbuttoncls(j) {
-            const dark = '#212529';
             if (j === 0) {
-                return {
-                    // 'color': dark,
-                    // 'background-color': dark,
-                };
+                return {};
             } else {
-                let color = ['#cd7f32', 'silver', 'gold'][j - 1];
+                let color = ['#cd7f32', 'silver', 'gold', '#E5E4E2'][j - 1];
                 return {
                     'background-color': color,
                 };
