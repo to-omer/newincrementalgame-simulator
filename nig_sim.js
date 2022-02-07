@@ -100,14 +100,26 @@ class ItemData {
             '段位効力5効率(工事中)',
             '輝き入手割合',
             '輝き使用効率(工事中)',
-            '裏発生器1強化(工事中)',
-            '裏発生器2強化(工事中)',
-            '裏発生器3強化(工事中)',
-            '裏発生器4強化(工事中)',
-            '裏発生器5強化(工事中)',
-            '裏発生器6強化(工事中)',
-            '裏発生器7強化(工事中)',
-            '裏発生器8強化(工事中)',
+            '裏発生器1強化',
+            '裏発生器2強化',
+            '裏発生器3強化',
+            '裏発生器4強化',
+            '裏発生器5強化',
+            '裏発生器6強化',
+            '裏発生器7強化',
+            '裏発生器8強化',
+            '裏ポイント強化',
+            '裏発生器1生産強化',
+            '裏発生器2生産強化',
+            '裏発生器3生産強化',
+            '裏発生器4生産強化',
+            '裏発生器5生産強化',
+            '裏発生器6生産強化',
+            '裏発生器7生産強化',
+            '裏発生器8生産強化',
+            '煌き入手割合',
+            '煌き使用効率(工事中)',
+            '煌き使用効率裏(工事中)',
         ];
     }
 };
@@ -193,6 +205,7 @@ class Nig {
                 darkgenerators: new Array(8).fill(D(0)),
                 darkgeneratorsBought: new Array(8).fill(D(0)),
                 darkgeneratorsCost: [D('1e100'), D('1e108'), D('1e127'), D('1e164'), D('1e225'), D('1e316'), D('1e423'), D('1e612')],
+                darklevel: D(0),
 
                 tickspeed: 1000,
 
@@ -271,6 +284,7 @@ class Nig {
             darkgenerators: playerData.darkgenerators.map(D),
             darkgeneratorsBought: playerData.darkgeneratorsBought.map(D),
             darkgeneratorsCost: playerData.darkgeneratorsCost.map(D),
+            darklevel: D(playerData.darklevel),
 
             tickspeed: parseFloat(playerData.tickspeed),
 
@@ -341,7 +355,7 @@ class Nig {
         }
 
         if (this.player.darkmoney.gte(1))
-            mult = mult.mul(this.player.darkmoney.add(10).log10());
+            mult = mult.mul(D(this.player.darkmoney.add(10).log10()).pow(1 + this.player.setchip[40] * 0.1));
 
         if (this.isRankChallengeBonusActive(9)) {
             mult = mult.mul(this.multbyac);
@@ -352,6 +366,7 @@ class Nig {
 
         let d = new Date();
         if (d.getMonth() == 0 && d.getDate() <= 7) mult = mult.mul(5);
+        if (d.getMonth() == 1 && 8 <= d.getDate() && d.getDate() <= 14) mult = mult.mul(5);
 
         this.commonmult = mult;
     };
@@ -374,7 +389,7 @@ class Nig {
         }
 
         if (this.player.darkgenerators[i].gte(1))
-            mult = mult.mul(i + 2 + this.player.darkgenerators[i].log10());
+            mult = mult.mul(D(i + 2 + this.player.darkgenerators[i].log10()).pow(1 + this.player.setchip[i + 32] * 0.25));
 
         mult = mult.mul(1 + this.player.setchip[i + 1] * 0.2);
 
@@ -423,14 +438,13 @@ class Nig {
         let a = Array.from(new Array(8), (_, i) => new Array(Math.max(0, highest + 1 - i)).fill(D(0)));
         for (let i = 0; i <= highest; i++) a[i][0] = this.player.accelerators[i];
         for (let i = highest + 1; i-- > 1;) {
-            let mult = D(1);
+            let mult = mu;
             if (i == 1 ? this.isChallengeBonusActive(10) : this.isRankChallengeBonusActive(6))
                 if (this.isRankChallengeBonusActive(10))
                     mult = mult.add(this.player.acceleratorsBought[i].pow_base(2));
                 else
                     mult = mult.add(this.player.acceleratorsBought[i]);
             mult = mult.mul(D(1.5).pow(this.player.setchip[i + 10]));
-            mult = mult.mul(mu);
             a[i].forEach((aa, j) => a[i - 1][j + 1] = a[i - 1][j + 1].add(aa.mul(mult)));
             while (a[i - 1].length > 0 && a[i - 1][a[i - 1].length - 1].eq(0)) a[i - 1].pop();
         }
@@ -442,8 +456,11 @@ class Nig {
         let d = Array.from(new Array(9), (_, i) => new Array(Math.max(0, highest + 2 - i)).fill(D(0)));
         d[0][0] = this.player.darkmoney;
         for (let i = 0; i <= highest; i++) d[i + 1][0] = this.player.darkgenerators[i];
+        const darkmult = this.softCap(this.player.darklevel.add(1), D(1e10));
         for (let i = highest + 1; i-- > 0;) {
-            d[i + 1].forEach((dd, j) => d[i][j + 1] = d[i][j + 1].add(dd.mul(mu)));
+            let mult = darkmult.mul(mu);
+            mult = mult.mul(1 + this.player.setchip[41 + i] * 0.25);
+            d[i + 1].forEach((dd, j) => d[i][j + 1] = d[i][j + 1].add(dd.mul(mult)));
             while (d[i].length > 0 && d[i][d[i].length - 1].eq(0)) d[i].pop();
         }
         return d;
@@ -1082,6 +1099,29 @@ class Nig {
             const sec = this.tick2sec(tick, update);
             return { tick: tick, sec: sec };
         }
+    };
+
+    calcDarkGoalTick(tdmoney, mu = D(1)) {
+        if (this.player.darkmoney.gte(tdmoney)) return D(0);
+        if (this.player.darkgenerators.every(g => g.eq(0))) return D('Infinity');
+        const dexpr = this.calcDarkGeneratorExpr(mu);
+        let ok = D(2);
+        let ng = D(0);
+        while (Nig.calcAfterNtick(dexpr[0], ok).lt(tdmoney)) {
+            ng = ok;
+            ok = ok.mul(ok);
+        }
+        let cnt = 0;
+        while (ng.add(1).lt(ok) && cnt < 60) {
+            const m = ok.sub(ng).lt(4) ? ok.add(ng).div(2).floor() : ok.mul(ng).sqrt().floor();
+            if (Nig.calcAfterNtick(dexpr[0], m).lt(tdmoney)) {
+                ng = m;
+            } else {
+                ok = m;
+            }
+            cnt += 1;
+        }
+        return ok;
     };
 
     simulate(checkpoints) {
