@@ -204,7 +204,7 @@ class Nig {
                 darkmoney: D(0),
                 darkgenerators: new Array(8).fill(D(0)),
                 darkgeneratorsBought: new Array(8).fill(D(0)),
-                darkgeneratorsCost: [D('1e100'), D('1e108'), D('1e127'), D('1e164'), D('1e225'), D('1e316'), D('1e423'), D('1e612')],
+                darkgeneratorsCost: [D('1e100'), D('1e108'), D('1e127'), D('1e164'), D('1e225'), D('1e316'), D('1e443'), D('1e612')],
                 darklevel: D(0),
 
                 tickspeed: 1000,
@@ -228,6 +228,8 @@ class Nig {
 
                 chip: [0, 0, 0, 0],
                 setchip: new Array(100).fill(0),
+
+                worldpipe: new Array(10).fill(null).map(() => 0),
             };
         };
         this.player = initialData();
@@ -238,6 +240,7 @@ class Nig {
         this.multbyac = D(1);
         this.memory = 0;
         this.smallmemory = 0;
+        this.pipedsmallmemory = 0;
         this.worldopened = new Array(10).fill().map(() => false);
         this.chipused = [0, 0, 0, 0];
         this.world = 0;
@@ -307,6 +310,8 @@ class Nig {
 
             chip: playerData.chip ?? [0, 0, 0, 0],
             setchip: playerData.setchip ?? new Array(100).fill(0),
+
+            worldpipe: playerData.worldpipe ?? new Array(10).fill(null).map(() => 0),
         };
         this.checkTrophies();
         this.checkMemories();
@@ -314,6 +319,7 @@ class Nig {
         this.checkUsedChips();
         this.checkWorlds();
         this.updateTickspeed();
+        this.checkPipedSmallMemories();
     };
 
     clone() {
@@ -347,6 +353,8 @@ class Nig {
         mult = mult.mul(1 + this.smallmemory * 0.01 + this.memory * 0.25);
         if (this.isRankChallengeBonusActive(11))
             mult = mult.mul(D(2).pow(D(this.memory).div(12)));
+
+        mult = mult.mul(1 + Math.sqrt(this.pipedsmallmemory));
 
         if (this.player.onchallenge && this.isRankChallengeBonusActive(4)) {
             let cnt = 0;
@@ -748,6 +756,14 @@ class Nig {
         this.world = i;
         this.loadPlayer(this.players[this.world]);
     };
+    openPipe(i) {
+        if (this.player.worldpipe[i] == 1) return;
+        let havepipe = Math.floor((this.smalltrophy - 72) / 3);
+        for (let j = 0; j < 10; j++) {
+            havepipe -= this.player.worldpipe[j];
+        }
+        if (havepipe > 0) this.player.worldpipe[i] = 1;
+    };
     checkTrophies() {
         if (this.player.levelresettime.gt(0)) this.player.trophies[0] = true;
         if (this.player.rankresettime.gt(0)) this.player.trophies[1] = true;
@@ -842,6 +858,21 @@ class Nig {
         if (this.player.darkmoney.gte(7777777)) this.player.smalltrophies[82] = true;
         if (this.player.darkmoney.gte('1e18')) this.player.smalltrophies[83] = true;
         if (this.player.darkmoney.gte('1e72')) this.player.smalltrophies[84] = true;
+        if (this.player.chip[0] > 0) this.player.smalltrophies[85] = true;
+        if (this.player.chip[0] >= 210) this.player.smalltrophies[86] = true;
+        if (this.player.chip[0] >= 1275) this.player.smalltrophies[87] = true;
+        if (this.player.chip[1] > 0) this.player.smalltrophies[88] = true;
+        if (this.player.chip[1] >= 210) this.player.smalltrophies[89] = true;
+        if (this.player.chip[1] >= 1275) this.player.smalltrophies[90] = true;
+        if (this.player.chip[2] > 0) this.player.smalltrophies[91] = true;
+        if (this.player.chip[2] >= 210) this.player.smalltrophies[92] = true;
+        if (this.player.chip[2] >= 1275) this.player.smalltrophies[93] = true;
+        if (this.player.chip[3] > 0) this.player.smalltrophies[94] = true;
+        if (this.player.chip[3] >= 210) this.player.smalltrophies[95] = true;
+        if (this.player.chip[3] >= 1275) this.player.smalltrophies[96] = true;
+        if (this.player.darklevel.greaterThan(0)) this.player.smalltrophies[97] = true;
+        if (this.player.darklevel.greaterThan('1e3')) this.player.smalltrophies[98] = true;
+        if (this.player.darklevel.greaterThan('1e10')) this.player.smalltrophies[99] = true;
     };
     checkMemories() {
         this.memory = 0;
@@ -849,6 +880,18 @@ class Nig {
             if (this.world == i) continue;
             this.memory += this.players[i].trophies.reduce((x, y) => x + (y ? 1 : 0), 0);
         }
+    };
+    checkPipedSmallMemories() {
+        let cnt = 0;
+        for (let i = 0; i < 10; i++) {
+            if (this.players[i].worldpipe[this.world] == 1) {
+                for (let j = 0; j < 100; j++) {
+                    if (this.players[i].smalltrophies[j]) cnt++;
+                }
+                cnt -= 75;
+            }
+        }
+        this.pipedsmallmemory = cnt;
     };
     checkSmallMemories() {
         this.smallmemory = this.player.smalltrophies.reduce((x, y) => x + (y ? 1 : 0), 0);

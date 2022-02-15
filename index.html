@@ -96,6 +96,7 @@
         <div v-if="nig.worldopened[1] || nig.worldopened[2]">記憶: {{ nig.memory }}</div>
         <div>里程: {{ nig.smallmemory }}</div>
         <div v-if="nig.worldopened[1] || nig.worldopened[2]">合計思い出: {{ nig.countRemembers() }}</div>
+        <div v-if="nig.smallmemory>=75">世界管所持数: {{ Math.floor((nig.smallmemory-72)/3) }}</div>
       </div>
     </div>
 
