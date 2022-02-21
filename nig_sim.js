@@ -240,6 +240,7 @@ class Nig {
         this.multbyac = D(1);
         this.memory = 0;
         this.smallmemory = 0;
+        this.eachpipedsmallmemory = new Array(10).fill(null).map(() => 0);
         this.pipedsmallmemory = 0;
         this.worldopened = new Array(10).fill().map(() => false);
         this.chipused = [0, 0, 0, 0];
@@ -320,6 +321,9 @@ class Nig {
         this.checkWorlds();
         this.updateTickspeed();
         this.checkPipedSmallMemories();
+        for (let i = 0; i < 8; i++) this.calcGeneratorCost(i, this.player.generatorsBought[i], true);
+        for (let i = 0; i < 8; i++) this.calcAcceleratorCost(i, this.player.acceleratorsBought[i], true);
+        for (let i = 0; i < 8; i++) this.calcDarkGeneratorCost(i, this.player.darkgeneratorsBought[i], true);
     };
 
     clone() {
@@ -408,8 +412,10 @@ class Nig {
         let mult = mu.mul(this.incrementalmults[i]);
         if (!this.isChallengeActive(4))
             mult = mult.mul(D(10).pow((i + 1) * (i - to)));
-        let lv = this.player.level.pow(1 + 0.5 * this.player.setchip[19]);
-        mult = mult.mul(D(lv.add(2).log2()).pow(i - to));
+        let lv = D(this.player.level.pow(1 + 0.5 * this.player.setchip[19]).add(2).log2());
+        let rk = this.player.rank.div(262142).add(2).log2();
+        rk += D(this.player.rank.add(2).log2()).log2() * this.player.setchip[23];
+        mult = mult.mul(D(lv.pow((i - to) * (1 + Math.max(rk, 0) * 0.05))));
         return mult;
     };
 
@@ -453,6 +459,7 @@ class Nig {
                 else
                     mult = mult.add(this.player.acceleratorsBought[i]);
             mult = mult.mul(D(1.5).pow(this.player.setchip[i + 10]));
+            mult = mult.mul(1 + this.eachpipedsmallmemory[1] * 0.2);
             a[i].forEach((aa, j) => a[i - 1][j + 1] = a[i - 1][j + 1].add(aa.mul(mult)));
             while (a[i - 1].length > 0 && a[i - 1][a[i - 1].length - 1].eq(0)) a[i - 1].pop();
         }
@@ -468,6 +475,7 @@ class Nig {
         for (let i = highest + 1; i-- > 0;) {
             let mult = darkmult.mul(mu);
             mult = mult.mul(1 + this.player.setchip[41 + i] * 0.25);
+            mult = mult.mul(1 + this.eachpipedsmallmemory[5] * 0.2);
             d[i + 1].forEach((dd, j) => d[i][j + 1] = d[i][j + 1].add(dd.mul(mult)));
             while (d[i].length > 0 && d[i][d[i].length - 1].eq(0)) d[i].pop();
         }
@@ -539,16 +547,20 @@ class Nig {
         if (this.isChallengeActive(6)) if (index == 3 || index == 7) return false;
         return this.player.money.gte(this.player.generatorsCost[index]);
     };
-    calcGeneratorCost(index, bought) {
+    calcGeneratorCost(index, bought, update = false) {
         const mult = bought.neq(0) && this.isChallengeActive(1) ? 2 : 1;
-        return (index === 0 ? bought : bought.add(index + 1).mul(index + 1)).mul(mult).pow_base(10);
+        let p = (index === 0 ? bought : bought.add(index + 1).mul(index + 1)).mul(mult);
+        p = p.sub(this.eachpipedsmallmemory[0] * 0.2);
+        const cost = p.pow_base(10);
+        if (update) this.player.generatorsCost[index] = cost;
+        return cost;
     };
     buyGenerator(index) {
         if (!this.isGeneratorBuyable(index)) return false;
         this.player.money = this.player.money.sub(this.player.generatorsCost[index]);
         this.player.generators[index] = this.player.generators[index].add(1);
         this.player.generatorsBought[index] = this.player.generatorsBought[index].add(1);
-        this.player.generatorsCost[index] = this.calcGeneratorCost(index, this.player.generatorsBought[index]);
+        this.calcGeneratorCost(index, this.player.generatorsBought[index], true);
         return true;
     };
 
@@ -562,33 +574,42 @@ class Nig {
         if (!this.isAcceleratorOpened(index)) return false;
         return this.player.money.gte(this.player.acceleratorsCost[index]);
     };
-    calcAcceleratorCost(index, bought) {
+    calcAcceleratorCost(index, bought, update = false) {
         let p = bought.add(1);
-        return p.mul(p.add(1)).div(2).mul(index === 0 ? 1 : D(10).mul(D(2).pow(index - 1))).pow_base(10);
+        p = p.mul(p.add(1)).div(2);
+        p = p.mul(index === 0 ? 1 : D(10).mul(D(2).pow(index - 1)));
+        p = p.sub(this.eachpipedsmallmemory[3] * 0.2 * (index + 1));
+        const cost = p.pow_base(10);
+        if (update) this.player.acceleratorsCost[index] = cost;
+        return cost;
     };
     buyAccelerator(index) {
         if (!this.isAcceleratorBuyable(index)) return false;
         this.player.money = this.player.money.sub(this.player.acceleratorsCost[index]);
         this.player.accelerators[index] = this.player.accelerators[index].add(1);
         this.player.acceleratorsBought[index] = this.player.acceleratorsBought[index].add(1);
-        this.player.acceleratorsCost[index] = this.calcAcceleratorCost(index, this.player.acceleratorsBought[index]);
+        this.calcAcceleratorCost(index, this.player.acceleratorsBought[index], true);
         return true;
     };
 
     isDarkGeneratorBuyable(index) {
         return this.player.money.gte(this.player.darkgeneratorsCost[index]);
     };
-    calcDarkGeneratorCost(index, bought) {
+    calcDarkGeneratorCost(index, bought, update = false) {
         let p = 100 + (index == 0 ? 0 : (index + 1) * (index + 1) * (index + 1));
         let q = bought.mul(index + 1).mul(index + 1);
-        return D(10).pow(q.add(p));
+        q = q.add(p);
+        q = q.sub(this.eachpipedsmallmemory[8] * 0.02 * (index + 1) * (index + 1));
+        const cost = D(10).pow(q);
+        if (update) this.player.darkgeneratorsCost[index] = cost;
+        return cost;
     };
     buyDarkGenerator(index) {
         if (!this.isDarkGeneratorBuyable(index)) return false;
         this.player.money = this.player.money.sub(this.player.darkgeneratorsCost[index]);
         this.player.darkgenerators[index] = this.player.darkgenerators[index].add(1);
         this.player.darkgeneratorsBought[index] = this.player.darkgeneratorsBought[index].add(1);
-        this.player.darkgeneratorsCost[index] = this.calcDarkGeneratorCost(index, this.player.darkgeneratorsBought[index]);
+        this.calcDarkGeneratorCost(index, this.player.darkgeneratorsBought[index], true);
         return true;
     };
 
@@ -684,13 +705,16 @@ class Nig {
             }
         }
         gainlevel = gainlevel.round();
+        gainlevel = gainlevel.mul(1 + this.eachpipedsmallmemory[2] * 0.2);
         if (this.isChallengeBonusActive(12)) gainlevel = gainlevel.mul(2);
         return gainlevel;
     };
     calcGainRank(x) {
         const money = x === undefined ? this.player.money : x;
-        let gainrank = D(money.log10()).div(36 - 0.25 * this.countRemembers() - 1.2 * this.player.levelitems[4]).pow_base(2).round();
+        let gainrank = D(money.log10()).div(36 - 0.25 * this.countRemembers() - 1.2 * this.player.levelitems[4] * (1 + 0.2 * this.player.setchip[29])).pow_base(2).round();
         if (this.isRankChallengeBonusActive(12)) gainrank = gainrank.mul(3);
+        gainrank = gainrank.mul(1 + this.player.setchip[22] * 0.5);
+        gainrank = gainrank.mul(1 + this.eachpipedsmallmemory[4] * 0.2);
         return gainrank;
     };
 
@@ -882,16 +906,21 @@ class Nig {
         }
     };
     checkPipedSmallMemories() {
-        let cnt = 0;
+        let sum = 0;
         for (let i = 0; i < 10; i++) {
             if (this.players[i].worldpipe[this.world] == 1) {
+                let cnt = 0;
                 for (let j = 0; j < 100; j++) {
                     if (this.players[i].smalltrophies[j]) cnt++;
                 }
                 cnt -= 75;
+                this.eachpipedsmallmemory[i] = cnt;
+                sum += cnt;
+            } else {
+                this.eachpipedsmallmemory[i] = 0;
             }
         }
-        this.pipedsmallmemory = cnt;
+        this.pipedsmallmemory = sum;
     };
     checkSmallMemories() {
         this.smallmemory = this.player.smalltrophies.reduce((x, y) => x + (y ? 1 : 0), 0);
