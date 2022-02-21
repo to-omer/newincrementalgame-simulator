@@ -413,7 +413,7 @@ class Nig {
         if (!this.isChallengeActive(4))
             mult = mult.mul(D(10).pow((i + 1) * (i - to)));
         let lv = D(this.player.level.pow(1 + 0.5 * this.player.setchip[19]).add(2).log2());
-        let rk = this.player.rank.div(262142).add(2).log2();
+        let rk = this.player.rank.add(2).div(262142).log2();
         rk += D(this.player.rank.add(2).log2()).log2() * this.player.setchip[23];
         mult = mult.mul(D(lv.pow((i - to) * (1 + Math.max(rk, 0) * 0.05))));
         return mult;
