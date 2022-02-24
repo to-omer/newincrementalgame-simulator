@@ -377,8 +377,9 @@ class Nig {
         mult = mult.mul(1 + this.player.setchip[0] * 0.05);
 
         let d = new Date();
-        if (d.getMonth() == 0 && d.getDate() <= 7) mult = mult.mul(5);
-        if (d.getMonth() == 1 && 8 <= d.getDate() && d.getDate() <= 14) mult = mult.mul(5);
+        // if (d.getMonth() == 0 && d.getDate() <= 7) mult = mult.mul(5);
+        // if (d.getMonth() == 1 && 8 <= d.getDate() && d.getDate() <= 14) mult = mult.mul(5);
+        if ((d.getMonth() == 1 && 25 <= d.getDate()) || ((d.getMonth() == 2 && d.getDate() <= 3))) mult = mult.mul(5);
 
         this.commonmult = mult;
     };
