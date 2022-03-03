@@ -33,6 +33,10 @@
         aria-expanded="false" aria-controls="dbought"
         v-if="nig.player.money.gte('1e100') || nig.player.darkmoney.gt(0) || nig.player.darkgenerators.some(d => d.gt(0))">裏</label>
 
+      <input type="checkbox" class="btn-check" id="timeInfoB" autocomplete="off">
+      <label class="btn btn-outline-dark" for="timeInfoB" data-bs-toggle="collapse" data-bs-target="#timeInfo"
+        aria-expanded="false" aria-controls="timeInfo" v-if="nig.player.accelevel>0">時</label>
+
       <input type="checkbox" class="btn-check" id="levelInfoB" autocomplete="off">
       <label class="btn btn-outline-dark" for="levelInfoB" data-bs-toggle="collapse" data-bs-target="#levelInfo"
         aria-expanded="false" aria-controls="levelInfo"
@@ -195,6 +199,19 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="collapse" id="timeInfo">
+      <div class="card card-body">
+        <div>時間回帰力: {{ nig.player.accelevel }}</div>
+        <div>
+          起動時間回帰力: {{ nig.player.accelevelused }}
+          <button type="button" class="btn btn-outline-dark btn-sm" @click="workTime(nig.player.accelevelused-1)"
+            :disabled="nig.player.accelevelused<=0">-</button>
+          <button type="button" class="btn btn-outline-dark btn-sm" @click="workTime(nig.player.accelevelused+1)"
+            :disabled="nig.player.accelevelused>=nig.player.accelevel">+</button>
+        </div>
+      </div>
     </div>
 
     <div class="collapse" id="levelInfo">

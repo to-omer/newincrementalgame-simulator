@@ -208,6 +208,8 @@ class Nig {
                 darklevel: D(0),
 
                 tickspeed: 1000,
+                accelevel: 0,
+                accelevelused: 0,
 
                 onchallenge: false,
                 challenges: new Array(8).fill(false),
@@ -291,6 +293,8 @@ class Nig {
             darklevel: D(playerData.darklevel),
 
             tickspeed: parseFloat(playerData.tickspeed),
+            accelevel: playerData.accelevel ?? 0,
+            accelevelused: playerData.accelevelused ?? 0,
 
             onchallenge: playerData.onchallenge ?? false,
             challenges: numarr2boolarr(playerData.challenges, 8) ?? new Array(8).fill(false),
@@ -374,12 +378,16 @@ class Nig {
             if (this.multbyac.gt(1)) mult = mult.mul(this.multbyac);
         }
 
-        mult = mult.mul(1 + this.player.setchip[0] * 0.05);
+        mult = mult.mul(1 + this.player.setchip[0] * 0.1);
 
+        let camp = this.player.accelevelused;
         let d = new Date();
-        // if (d.getMonth() == 0 && d.getDate() <= 7) mult = mult.mul(5);
-        // if (d.getMonth() == 1 && 8 <= d.getDate() && d.getDate() <= 14) mult = mult.mul(5);
-        if ((d.getMonth() == 1 && 25 <= d.getDate()) || ((d.getMonth() == 2 && d.getDate() <= 3))) mult = mult.mul(5);
+        // if (d.getMonth() == 0 && d.getDate() <= 7) camp = camp + 1;
+        // if (d.getMonth() == 1 && 8 <= d.getDate() && d.getDate() <= 14) camp = camp + 1;
+        if ((d.getMonth() == 1 && 25 <= d.getDate()) || ((d.getMonth() == 2 && d.getDate() <= 3))) camp = camp + 1;
+        if (camp > 3) camp = 3;
+        mult = mult.mul(1 + 4 * camp);
+
 
         this.commonmult = mult;
     };
@@ -404,7 +412,7 @@ class Nig {
         if (this.player.darkgenerators[i].gte(1))
             mult = mult.mul(D(i + 2 + this.player.darkgenerators[i].log10()).pow(1 + this.player.setchip[i + 32] * 0.25));
 
-        mult = mult.mul(1 + this.player.setchip[i + 1] * 0.2);
+        mult = mult.mul(1 + this.player.setchip[i + 1] * 0.5);
 
         this.incrementalmults[i] = mult;
     };
@@ -498,7 +506,7 @@ class Nig {
     };
     basetick() {
         const challengebonusescount = this.player.challengebonuses.reduce((x, y) => x + (y ? 1 : 0), 0);
-        return 1000 - this.player.setchip[9] * 50 - this.player.levelitems[1] * challengebonusescount * (1 + this.player.setchip[27] * 0.5);
+        return 1000 * (1 + 0.5 * this.player.accelevelused) - this.player.setchip[9] * 50 - this.player.levelitems[1] * challengebonusescount * (1 + this.player.setchip[27] * 0.5);
     };
     updateTickspeed() {
         const amult = this.isChallengeBonusActive(6) ? (this.isRankChallengeBonusActive(10) ? this.player.acceleratorsBought[0].pow_base(2) : this.player.acceleratorsBought[0].add(1)) : D(1);
@@ -712,7 +720,9 @@ class Nig {
     };
     calcGainRank(x) {
         const money = x === undefined ? this.player.money : x;
-        let gainrank = D(money.log10()).div(36 - 0.25 * this.countRemembers() - 1.2 * this.player.levelitems[4] * (1 + 0.2 * this.player.setchip[29])).pow_base(2).round();
+        let dv = 36 - 0.25 * this.countRemembers() - 1.2 * this.player.levelitems[4] * (1 + 0.2 * this.player.setchip[29]);
+        dv = Math.max(dv, 6);
+        let gainrank = D(money.log10()).div(dv).pow_base(2).round();
         if (this.isRankChallengeBonusActive(12)) gainrank = gainrank.mul(3);
         gainrank = gainrank.mul(1 + this.player.setchip[22] * 0.5);
         gainrank = gainrank.mul(1 + this.eachpipedsmallmemory[4] * 0.2);
@@ -755,7 +765,7 @@ class Nig {
     };
 
     resetRankborder() {
-        return D(10).pow((this.isChallengeActive(0) ? 96 : 72) - this.countRemembers() / 2.0);
+        return D(10).pow((this.isChallengeActive(0) ? 96 : 72) - Math.min(this.countRemembers() / 2.0, 36));
     };
 
     calcChallengeId() {
@@ -942,6 +952,7 @@ class Nig {
         if (D(this.players[0].rank).gte(262142)) this.worldopened[6] = true;
         if (this.players[0].rankchallengecleared.includes(238)) this.worldopened[7] = true;
         if (this.players[0].challengecleared.length >= 200) this.worldopened[8] = true;
+        if (this.players[0].rankchallengecleared.length >= 200) this.worldopened[9] = true;
     };
     toggleChip(i) {
         let oldchip = this.player.setchip[i];
@@ -963,6 +974,11 @@ class Nig {
         this.chipused.fill(0);
         for (let v of this.player.setchip) {
             if (v != 0) this.chipused[v - 1] = this.chipused[v - 1] + 1;
+        }
+    };
+    workTime(val) {
+        if (0 <= val && val <= this.player.accelevel) {
+            this.player.accelevelused = val;
         }
     };
 
@@ -1601,6 +1617,10 @@ const app = Vue.createApp({
         },
         configChip(i, j) {
             this.nig.configChip(i, j);
+            this.clearAllCache();
+        },
+        workTime(i) {
+            this.nig.workTime(i);
             this.clearAllCache();
         },
         clearCheckpointsCache() {
