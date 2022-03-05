@@ -17,7 +17,7 @@
 <body>
   <div id="app" class="container">
 
-    <div id="controlButtons" class="btn-group" role="group" aria-label="control buttons">
+    <div id="controlButtons" class="btn-group flex-wrap" role="group" aria-label="control buttons">
       <button type="button" class="btn btn-outline-dark" @click="importsave()">データ取り込み</button>
 
       <input type="checkbox" class="btn-check" id="basicInfoB" autocomplete="off">
@@ -50,9 +50,17 @@
       <label class="btn btn-outline-dark" for="shineInfoB" data-bs-toggle="collapse" data-bs-target="#shineInfo"
         aria-expanded="false" aria-controls="shineInfo" v-if="nig.player.challengecleared.length >= 64">輝き</label>
 
+      <input type="checkbox" class="btn-check" id="worldInfoB" autocomplete="off">
+      <label class="btn btn-outline-dark" for="worldInfoB" data-bs-toggle="collapse" data-bs-target="#worldInfo"
+        aria-expanded="false" aria-controls="worldInfo" v-if="nig.worldopened.slice(1).some(b => b)">世界</label>
+
       <input type="checkbox" class="btn-check" id="chipInfoB" autocomplete="off">
       <label class="btn btn-outline-dark" for="chipInfoB" data-bs-toggle="collapse" data-bs-target="#chipInfo"
         aria-expanded="false" aria-controls="chipInfo" v-if="nig.player.smalltrophies[5]">鋳片</label>
+
+      <input type="checkbox" class="btn-check" id="trophyInfoB" autocomplete="off">
+      <label class="btn btn-outline-dark" for="trophyInfoB" data-bs-toggle="collapse" data-bs-target="#trophyInfo"
+        aria-expanded="false" aria-controls="trophyInfo">実績</label>
 
       <input type="checkbox" class="btn-check" id="challengeViewB" autocomplete="off">
       <label class="btn btn-outline-dark" for="challengeViewB" data-bs-toggle="collapse" data-bs-target="#challengeView"
@@ -66,18 +74,6 @@
       <label class="btn btn-outline-dark" for="gaexpressionB" data-bs-toggle="collapse" data-bs-target="#gaexpression"
         aria-expanded="false" aria-controls="gaexpression">式</label>
 
-      <div class="btn-group" role="group" v-if="nig.worldopened[1] || nig.worldopened[2]">
-        <button type="button" class="btn btn-outline-dark" id="worldSelect" data-bs-toggle="dropdown"
-          aria-expanded="false">
-          世界{{ nig.world + 1 }}
-        </button>
-        <ul class="dropdown-menu" aria-labelledby="worldSelect">
-          <li v-for="i in 10" :key="i" v-show="nig.worldopened[i-1]">
-            <button type="button" class="dropdown-item" @click="selectWorld(i - 1)">世界{{ i }}</button>
-          </li>
-        </ul>
-      </div>
-
       <input type="checkbox" class="btn-check" id="helpMessageB" autocomplete="off">
       <label class="btn btn-outline-dark" for="helpMessageB" data-bs-toggle="collapse" data-bs-target="#helpMessage"
         aria-expanded="false" aria-controls="helpMessage">？</label>
@@ -85,6 +81,7 @@
 
     <div class="collapse" id="basicInfo">
       <div class="card card-body">
+        <div v-if="nig.worldopened.slice(1).some(b => b)">世界: {{ nig.world+1 }}</div>
         <div id="money">ポイント: {{ formatDecimal(nig.player.money, 6) }}</div>
         <div v-if="nig.player.levelresettime.gt(0) || nig.player.rankresettime.gt(0)">
           段位: {{ formatDecimal(nig.player.level, 6) }} 段位リセット: {{ formatDecimal(nig.player.levelresettime, 6) }}
@@ -305,6 +302,37 @@
       </div>
     </div>
 
+    <div class="collapse" id="worldInfo">
+      <table class="table table-bordered table-sm text-center" style="margin-bottom: 0px;">
+        <thead>
+          <tr>
+            <td class="align-middle"></td>
+            <td class="align-middle">記憶</td>
+            <td class="align-middle">思い出</td>
+            <td class="align-middle">世界管</td>
+            <td class="align-middle" v-for="j in 10" :key="j" v-show="nig.worldopened[j-1]">{{ j }}</td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="i in 10" :key="i">
+            <td class="d-grid">
+              <button type="button" class="btn btn-sm" v-if="nig.worldopened[i-1]"
+                :class="buttonselectedcls(nig.world == i-1)" :disabled="!nig.worldopened[i-1]"
+                @click="selectWorld(i - 1)">世界{{ i }}</button>
+            </td>
+            <td class="align-middle">{{ nig.players[i-1].trophies.reduce((x, y) => x + (y ? 1 : 0), 0) }}</td>
+            <td class="align-middle">{{ nig.players[i-1].remember }}</td>
+            <td class="align-middle">{{ Math.max(0, Math.floor((nig.players[i-1].smalltrophies.reduce((x, y) => x + (y ?
+              1 : 0), 0) - 72) / 3)) }}</td>
+            <td class="align-middle" v-for="j in 10" :key="j" v-show="nig.worldopened[j-1]"
+              :style="{ 'background-color': i==j ? 'lightgray' : 'transparent' }">
+              {{ nig.players[i-1].worldpipe[j-1] ? '〇' : '' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <div class="collapse" id="chipInfo">
       <div class="card card-body">
         <div>
@@ -333,6 +361,38 @@
               <span class="uptooltip">{{ itemdata.chipbonusname[i-1] }}</span>
             </span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="collapse" id="trophyInfo">
+      <div class="card card-body">
+        <div>
+          実績
+          <table class="table-bordered table-sm">
+            <tbody>
+              <tr>
+                <td v-for="i in 8" :key="i">
+                  <span>{{ nig.player.trophies[i-1] ? itemdata.trophytext[i-1] : '???' }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          里程: {{ nig.smallmemory }}
+          <table class="table-bordered table-sm">
+            <tbody>
+              <tr v-for="i in 10" :key="i">
+                <td v-for="j in 10" :key="j" class="tooltipcell">
+                  <span>{{ nig.player.smalltrophies[i*10+j-11] ? (i-1)*10+j : '　' }}</span>
+                  <span class="uptooltip" v-if="spoiler">
+                    {{ itemdata.smalltrophytext[i*10+j-11] }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -532,6 +592,12 @@
           <input type="text" class="form-control" v-model.number="procmspertick" placeholder="0"
             aria-label="procmspertick">
           <span class="input-group-text">ms</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="spoiler" v-model="spoiler">
+          <label class="form-check-label" for="spoiler">ネタバレ</label>
         </div>
       </div>
     </div>
