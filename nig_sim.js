@@ -304,6 +304,9 @@ class Nig {
                 rankresettime: D(0),
                 ranktoken: 0,
 
+                crown: D(0),
+                crownresettime: D(0),
+
                 generators: new Array(8).fill(D(0)),
                 generatorsBought: new Array(8).fill(D(0)),
                 generatorsCost: [D(1), D('1e4'), D('1e9'), D('1e16'), D('1e25'), D('1e36'), D('1e49'), D('1e64')],
@@ -388,6 +391,9 @@ class Nig {
             rank: D(playerData.rank ?? 0),
             rankresettime: D(playerData.rankresettime ?? 0),
             ranktoken: playerData.ranktoken ?? 0,
+
+            crown: D(playerData.crown ?? 0),
+            crownresettime: D(playerData.crownresettime ?? 0),
 
             generators: playerData.generators.map(D),
             generatorsBought: playerData.generatorsBought.map(D),
@@ -496,8 +502,8 @@ class Nig {
         let d = new Date();
         // if (d.getMonth() == 0 && d.getDate() <= 7) camp = camp + 1;
         // if (d.getMonth() == 1 && 8 <= d.getDate() && d.getDate() <= 14) camp = camp + 1;
-        if ((d.getMonth() == 1 && 25 <= d.getDate()) || ((d.getMonth() == 2 && d.getDate() <= 3))) camp = camp + 1;
-        if (camp > 3) camp = 3;
+        // if ((d.getMonth() == 1 && 25 <= d.getDate()) || ((d.getMonth() == 2 && d.getDate() <= 3))) camp = camp + 1;
+        if (camp > 4) camp = 4;
         mult = mult.mul(1 + 4 * camp);
 
 
@@ -834,11 +840,18 @@ class Nig {
         const money = x === undefined ? this.player.money : x;
         let dv = 36 - 0.25 * this.countRemembers() - 1.2 * this.player.levelitems[4] * (1 + 0.2 * this.player.setchip[29]);
         dv = Math.max(dv, 6);
+        dv = dv - this.player.crown.add(2).log2()*0.1;
+        dv = Math.max(dv, 3);
         let gainrank = D(money.log10()).div(dv).pow_base(2).round();
         if (this.isRankChallengeBonusActive(12)) gainrank = gainrank.mul(3);
         gainrank = gainrank.mul(1 + this.player.setchip[22] * 0.5);
         gainrank = gainrank.mul(1 + this.eachpipedsmallmemory[4] * 0.2);
         return gainrank;
+    };
+    calcGainCrown(x) {
+        const money = x === undefined ? this.player.money : x;
+        let dv = 72;
+        return D(2).pow(money.log10()/72).round()
     };
 
     resetLevel(_force, exit, challenge) {
@@ -878,6 +891,9 @@ class Nig {
 
     resetRankborder() {
         return D(10).pow((this.isChallengeActive(0) ? 96 : 72) - Math.min(this.countRemembers() / 2.0, 36));
+    };
+    resetCrownborder() {
+        return D('1e216');
     };
 
     calcChallengeId() {
@@ -919,6 +935,7 @@ class Nig {
         if (this.player.brightness > 0) this.player.trophies[5] = true;
         if (this.player.remember > 0) this.player.trophies[6] = true;
         if (this.world == 0 && this.countRemembers() > 0) this.player.trophies[6] = true;
+        if (this.player.crownresettime.gt(0)) this.player.trophies[7] = true;
 
         if (this.player.money.gt(0)) this.player.smalltrophies[0] = true;
         if (this.player.money.gt(777)) this.player.smalltrophies[1] = true;
@@ -1056,6 +1073,11 @@ class Nig {
     };
     checkWorlds() {
         this.worldopened[0] = true;
+        if (D(this.players[0].crownresettime).gt(0)){
+            for(let i = 1; i < 10; i++){
+                this.worldopened[i] = true;
+            }
+        }
         if (this.players[0].challengecleared.includes(238)) this.worldopened[1] = true;
         if (this.players[0].challengecleared.length >= 100) this.worldopened[2] = true;
         if (this.players[0].rankchallengecleared.length >= 16) this.worldopened[3] = true;
@@ -1100,6 +1122,8 @@ class Nig {
                 return this.calcGainLevel(x);
             } else if (target === 'rankreset') {
                 return this.calcGainRank(x);
+            } else if (target === 'crownreset') {
+                return this.calcGainCrown(x);
             }
         };
         if (f(l).gte(value)) return l;
@@ -1127,6 +1151,9 @@ class Nig {
             } else if (target == 'rankreset') {
                 value = value.ceil();
                 return this.searchLowerBound(value, this.resetRankborder(), target);
+            } else if (target == 'crownreset') {
+                value = value.ceil();
+                return this.searchLowerBound(value, this.resetCrownborder(), target);
             } else if (target == 'point') {
                 return value;
             }
