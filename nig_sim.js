@@ -200,9 +200,9 @@ class ItemData {
             '時間加速器8効率',
             '段位入手量',
             '段位効率',
-            '段位リセット入手量(工事中)',
+            '段位リセット入手量',
             '段位リセット効率(工事中)',
-            '階位入手量(工事中)',
+            '階位入手量',
             '階位効率',
             '階位リセット入手量',
             '階位リセット効率(工事中)',
@@ -211,7 +211,7 @@ class ItemData {
             '段位効力3効率',
             '段位効力5効率',
             '輝き入手割合',
-            '輝き使用効率(工事中)',
+            '輝き使用効率',
             '裏発生器1強化',
             '裏発生器2強化',
             '裏発生器3強化',
@@ -230,7 +230,7 @@ class ItemData {
             '裏発生器7生産強化',
             '裏発生器8生産強化',
             '煌き入手割合',
-            '煌き使用効率(工事中)',
+            '煌き使用効率',
             '煌き使用効率裏(工事中)',
         ];
     }
@@ -647,14 +647,14 @@ class Nig {
     spendShine(num) {
         if (this.player.shine < num) return;
         this.player.shine -= num;
-        const val = D(11).pow(D(num).log10());
+        const val = D(11 + this.player.setchip[31]).pow(D(num).log10());
         this.updateGenerators(val);
         this.updateAccelerators(val);
     };
     spendBrightness(num) {
         if (this.player.brightness < num) return;
         this.player.brightness -= num;
-        const val = D(11).pow(D(num * 100).log10());
+        const val = D(11 + this.player.setchip[50]).pow(D(num * 100).log10());
         this.updateGenerators(val);
         this.updateAccelerators(val);
         this.updateDarkGenerators(D(num));
