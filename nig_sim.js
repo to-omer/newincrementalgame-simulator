@@ -864,7 +864,7 @@ class Nig {
     calcGainCrown(x) {
         const money = x === undefined ? this.player.money : x;
         let dv = 72;
-        return D(2).pow(money.log10() / dv).round()
+        return D(2).pow(money.log10() / dv).round();
     };
 
     resetLevel(_force, exit, challenge) {
@@ -1054,17 +1054,17 @@ class Nig {
         if (this.player.darklevel.greaterThan('1e10')) this.player.smalltrophies[99] = true;
 
         if (this.player.crownresettime.gt(0)) {
-            if(this.player.crownresettime.gt(0))this.player.smalltrophies2nd[0] = true
-            if(this.player.crownresettime.gte(5))this.player.smalltrophies2nd[1] = true
-            if(this.player.crownresettime.gte(20))this.player.smalltrophies2nd[2] = true
-            if(this.player.crownresettime.gte(100))this.player.smalltrophies2nd[3] = true
-            if(this.player.accelevel>=1)this.player.smalltrophies2nd[4] = true
-            if(this.player.accelevel>=3)this.player.smalltrophies2nd[5] = true
-            if(this.player.accelevel>=6)this.player.smalltrophies2nd[6] = true
-            if(this.player.accelevel>=10)this.player.smalltrophies2nd[7] = true
-            if(this.player.rank.gt('1e8'))this.player.smalltrophies2nd[8] = true
-            if(this.player.rank.gt('1e10'))this.player.smalltrophies2nd[9] = true
-            if(this.player.rank.gt('1e12'))this.player.smalltrophies2nd[10] = true
+            if(this.player.crownresettime.gt(0))this.player.smalltrophies2nd[0] = true;
+            if(this.player.crownresettime.gte(5))this.player.smalltrophies2nd[1] = true;
+            if(this.player.crownresettime.gte(20))this.player.smalltrophies2nd[2] = true;
+            if(this.player.crownresettime.gte(100))this.player.smalltrophies2nd[3] = true;
+            if(this.player.accelevel>=1)this.player.smalltrophies2nd[4] = true;
+            if(this.player.accelevel>=3)this.player.smalltrophies2nd[5] = true;
+            if(this.player.accelevel>=6)this.player.smalltrophies2nd[6] = true;
+            if(this.player.accelevel>=10)this.player.smalltrophies2nd[7] = true;
+            if(this.player.rank.gt('1e8'))this.player.smalltrophies2nd[8] = true;
+            if(this.player.rank.gt('1e10'))this.player.smalltrophies2nd[9] = true;
+            if(this.player.rank.gt('1e12'))this.player.smalltrophies2nd[10] = true;
 
         }
     };
