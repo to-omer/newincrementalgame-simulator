@@ -177,6 +177,17 @@ class ItemData {
             '裏段位を1以上にする',
             '裏段位を1e3より大きくする',
             '裏段位を1e10より大きくする',
+            '冠位リセットを1以上にする',
+            '冠位リセットを5以上にする',
+            '冠位リセットを20以上にする',
+            '冠位リセットを100以上にする',
+            '時間回帰力を1以上にする',
+            '時間回帰力を3以上にする',
+            '時間回帰力を6以上にする',
+            '時間回帰力を10以上にする',
+            '階位を1e8より大きくする',
+            '階位を1e10より大きくする',
+            '階位を1e12より大きくする',
         ]
         this.chipname = ['銅片', '銀片', '金片', '白金片'];
         this.chipbonusname = [
@@ -200,9 +211,9 @@ class ItemData {
             '時間加速器8効率',
             '段位入手量',
             '段位効率',
-            '段位リセット入手量(工事中)',
+            '段位リセット入手量',
             '段位リセット効率(工事中)',
-            '階位入手量(工事中)',
+            '階位入手量',
             '階位効率',
             '階位リセット入手量',
             '階位リセット効率(工事中)',
@@ -211,7 +222,7 @@ class ItemData {
             '段位効力3効率',
             '段位効力5効率',
             '輝き入手割合',
-            '輝き使用効率(工事中)',
+            '輝き使用効率',
             '裏発生器1強化',
             '裏発生器2強化',
             '裏発生器3強化',
@@ -230,7 +241,7 @@ class ItemData {
             '裏発生器7生産強化',
             '裏発生器8生産強化',
             '煌き入手割合',
-            '煌き使用効率(工事中)',
+            '煌き使用効率',
             '煌き使用効率裏(工事中)',
         ];
     }
@@ -304,6 +315,9 @@ class Nig {
                 rankresettime: D(0),
                 ranktoken: 0,
 
+                crown: D(0),
+                crownresettime: D(0),
+
                 generators: new Array(8).fill(D(0)),
                 generatorsBought: new Array(8).fill(D(0)),
                 generatorsCost: [D(1), D('1e4'), D('1e9'), D('1e16'), D('1e25'), D('1e36'), D('1e49'), D('1e64')],
@@ -333,6 +347,7 @@ class Nig {
 
                 trophies: new Array(8).fill(false),
                 smalltrophies: new Array(100).fill(false),
+                smalltrophies2nd: new Array(100).fill(false),
 
                 levelitems: new Array(5).fill(0),
                 levelitembought: 0,
@@ -389,6 +404,9 @@ class Nig {
             rankresettime: D(playerData.rankresettime ?? 0),
             ranktoken: playerData.ranktoken ?? 0,
 
+            crown: D(playerData.crown ?? 0),
+            crownresettime: D(playerData.crownresettime ?? 0),
+
             generators: playerData.generators.map(D),
             generatorsBought: playerData.generatorsBought.map(D),
             generatorsCost: playerData.generatorsCost.map(D),
@@ -418,6 +436,7 @@ class Nig {
 
             trophies: playerData.trophies ?? new Array(8).fill(false),
             smalltrophies: playerData.smalltrophies ?? new Array(100).fill(false),
+            smalltrophies2nd: playerData.smalltrophies2nd ?? new Array(100).fill(false),
 
             levelitems: playerData.levelitems ?? new Array(5).fill(0),
             levelitembought: playerData.levelitembought ?? 0,
@@ -496,8 +515,8 @@ class Nig {
         let d = new Date();
         // if (d.getMonth() == 0 && d.getDate() <= 7) camp = camp + 1;
         // if (d.getMonth() == 1 && 8 <= d.getDate() && d.getDate() <= 14) camp = camp + 1;
-        if ((d.getMonth() == 1 && 25 <= d.getDate()) || ((d.getMonth() == 2 && d.getDate() <= 3))) camp = camp + 1;
-        if (camp > 3) camp = 3;
+        // if ((d.getMonth() == 1 && 25 <= d.getDate()) || ((d.getMonth() == 2 && d.getDate() <= 3))) camp = camp + 1;
+        if (camp > 4) camp = 4;
         mult = mult.mul(1 + 4 * camp);
 
 
@@ -641,14 +660,14 @@ class Nig {
     spendShine(num) {
         if (this.player.shine < num) return;
         this.player.shine -= num;
-        const val = D(11).pow(D(num).log10());
+        const val = D(11 + this.player.setchip[31]).pow(D(num).log10());
         this.updateGenerators(val);
         this.updateAccelerators(val);
     };
     spendBrightness(num) {
         if (this.player.brightness < num) return;
         this.player.brightness -= num;
-        const val = D(11).pow(D(num * 100).log10());
+        const val = D(11 + this.player.setchip[50]).pow(D(num * 100).log10());
         this.updateGenerators(val);
         this.updateAccelerators(val);
         this.updateDarkGenerators(D(num));
@@ -834,11 +853,18 @@ class Nig {
         const money = x === undefined ? this.player.money : x;
         let dv = 36 - 0.25 * this.countRemembers() - 1.2 * this.player.levelitems[4] * (1 + 0.2 * this.player.setchip[29]);
         dv = Math.max(dv, 6);
+        dv = dv - this.player.crown.add(2).log2() * 0.1;
+        dv = Math.max(dv, 3);
         let gainrank = D(money.log10()).div(dv).pow_base(2).round();
         if (this.isRankChallengeBonusActive(12)) gainrank = gainrank.mul(3);
         gainrank = gainrank.mul(1 + this.player.setchip[22] * 0.5);
         gainrank = gainrank.mul(1 + this.eachpipedsmallmemory[4] * 0.2);
         return gainrank;
+    };
+    calcGainCrown(x) {
+        const money = x === undefined ? this.player.money : x;
+        let dv = 72;
+        return D(2).pow(money.log10() / dv).round();
     };
 
     resetLevel(_force, exit, challenge) {
@@ -879,6 +905,9 @@ class Nig {
     resetRankborder() {
         return D(10).pow((this.isChallengeActive(0) ? 96 : 72) - Math.min(this.countRemembers() / 2.0, 36));
     };
+    resetCrownborder() {
+        return D('1e216');
+    };
 
     calcChallengeId() {
         let challengeid = 0;
@@ -904,12 +933,14 @@ class Nig {
         this.loadPlayer(this.players[this.world]);
     };
     openPipe(i) {
-        if (this.player.worldpipe[i] == 1) return;
+        let maxpipe = 1;
+        if (this.player.trophies[7]) maxpipe = 2;
+        if (this.player.worldpipe[i] >= maxpipe) return;
         let havepipe = Math.floor((this.smallmemory - 72) / 3);
         for (let j = 0; j < 10; j++) {
             havepipe -= this.player.worldpipe[j];
         }
-        if (havepipe > 0) this.player.worldpipe[i] = 1;
+        if (havepipe > 0) this.player.worldpipe[i] += 1;
     };
     checkTrophies() {
         if (this.player.levelresettime.gt(0)) this.player.trophies[0] = true;
@@ -919,6 +950,7 @@ class Nig {
         if (this.player.brightness > 0) this.player.trophies[5] = true;
         if (this.player.remember > 0) this.player.trophies[6] = true;
         if (this.world == 0 && this.countRemembers() > 0) this.player.trophies[6] = true;
+        if (this.player.crownresettime.gt(0)) this.player.trophies[7] = true;
 
         if (this.player.money.gt(0)) this.player.smalltrophies[0] = true;
         if (this.player.money.gt(777)) this.player.smalltrophies[1] = true;
@@ -1020,6 +1052,21 @@ class Nig {
         if (this.player.darklevel.greaterThan(0)) this.player.smalltrophies[97] = true;
         if (this.player.darklevel.greaterThan('1e3')) this.player.smalltrophies[98] = true;
         if (this.player.darklevel.greaterThan('1e10')) this.player.smalltrophies[99] = true;
+
+        if (this.player.crownresettime.gt(0)) {
+            if(this.player.crownresettime.gt(0))this.player.smalltrophies2nd[0] = true;
+            if(this.player.crownresettime.gte(5))this.player.smalltrophies2nd[1] = true;
+            if(this.player.crownresettime.gte(20))this.player.smalltrophies2nd[2] = true;
+            if(this.player.crownresettime.gte(100))this.player.smalltrophies2nd[3] = true;
+            if(this.player.accelevel>=1)this.player.smalltrophies2nd[4] = true;
+            if(this.player.accelevel>=3)this.player.smalltrophies2nd[5] = true;
+            if(this.player.accelevel>=6)this.player.smalltrophies2nd[6] = true;
+            if(this.player.accelevel>=10)this.player.smalltrophies2nd[7] = true;
+            if(this.player.rank.gt('1e8'))this.player.smalltrophies2nd[8] = true;
+            if(this.player.rank.gt('1e10'))this.player.smalltrophies2nd[9] = true;
+            if(this.player.rank.gt('1e12'))this.player.smalltrophies2nd[10] = true;
+
+        }
     };
     checkMemories() {
         this.memory = 0;
@@ -1031,12 +1078,16 @@ class Nig {
     checkPipedSmallMemories() {
         let sum = 0;
         for (let i = 0; i < 10; i++) {
-            if (this.players[i].worldpipe[this.world] == 1) {
+            if (this.players[i].worldpipe[this.world] >= 1) {
                 let cnt = 0;
                 for (let j = 0; j < 100; j++) {
                     if (this.players[i].smalltrophies[j]) cnt++;
                 }
+                for (let j = 0; j < 100; j++) {
+                    if (this.players[i].smalltrophies2nd[j]) cnt++;
+                }
                 cnt -= 75;
+                cnt *= this.players[i].worldpipe[this.world];
                 this.eachpipedsmallmemory[i] = cnt;
                 sum += cnt;
             } else {
@@ -1047,6 +1098,7 @@ class Nig {
     };
     checkSmallMemories() {
         this.smallmemory = this.player.smalltrophies.reduce((x, y) => x + (y ? 1 : 0), 0);
+        this.smallmemory += this.player.smalltrophies2nd.reduce((x, y) => x + (y ? 1 : 0), 0);
     };
     countRemembers() {
         let cnt = 0;
@@ -1056,6 +1108,11 @@ class Nig {
     };
     checkWorlds() {
         this.worldopened[0] = true;
+        if (D(this.players[0].crownresettime).gt(0)){
+            for(let i = 1; i < 10; i++){
+                this.worldopened[i] = true;
+            }
+        }
         if (this.players[0].challengecleared.includes(238)) this.worldopened[1] = true;
         if (this.players[0].challengecleared.length >= 100) this.worldopened[2] = true;
         if (this.players[0].rankchallengecleared.length >= 16) this.worldopened[3] = true;
@@ -1100,6 +1157,8 @@ class Nig {
                 return this.calcGainLevel(x);
             } else if (target === 'rankreset') {
                 return this.calcGainRank(x);
+            } else if (target === 'crownreset') {
+                return this.calcGainCrown(x);
             }
         };
         if (f(l).gte(value)) return l;
@@ -1127,6 +1186,9 @@ class Nig {
             } else if (target == 'rankreset') {
                 value = value.ceil();
                 return this.searchLowerBound(value, this.resetRankborder(), target);
+            } else if (target == 'crownreset') {
+                value = value.ceil();
+                return this.searchLowerBound(value, this.resetCrownborder(), target);
             } else if (target == 'point') {
                 return value;
             }
