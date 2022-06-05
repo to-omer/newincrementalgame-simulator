@@ -840,7 +840,7 @@ class Nig {
         const money = x === undefined ? this.player.money : x;
         let dv = 36 - 0.25 * this.countRemembers() - 1.2 * this.player.levelitems[4] * (1 + 0.2 * this.player.setchip[29]);
         dv = Math.max(dv, 6);
-        dv = dv - this.player.crown.add(2).log2()*0.1;
+        dv = dv - this.player.crown.add(2).log2() * 0.1;
         dv = Math.max(dv, 3);
         let gainrank = D(money.log10()).div(dv).pow_base(2).round();
         if (this.isRankChallengeBonusActive(12)) gainrank = gainrank.mul(3);
@@ -851,7 +851,7 @@ class Nig {
     calcGainCrown(x) {
         const money = x === undefined ? this.player.money : x;
         let dv = 72;
-        return D(2).pow(money.log10()/72).round()
+        return D(2).pow(money.log10() / dv).round()
     };
 
     resetLevel(_force, exit, challenge) {
