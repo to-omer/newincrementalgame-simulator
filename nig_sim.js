@@ -177,6 +177,17 @@ class ItemData {
             '裏段位を1以上にする',
             '裏段位を1e3より大きくする',
             '裏段位を1e10より大きくする',
+            '冠位リセットを1以上にする',
+            '冠位リセットを5以上にする',
+            '冠位リセットを20以上にする',
+            '冠位リセットを100以上にする',
+            '時間回帰力を1以上にする',
+            '時間回帰力を3以上にする',
+            '時間回帰力を6以上にする',
+            '時間回帰力を10以上にする',
+            '階位を1e8より大きくする',
+            '階位を1e10より大きくする',
+            '階位を1e12より大きくする',
         ]
         this.chipname = ['銅片', '銀片', '金片', '白金片'];
         this.chipbonusname = [
@@ -336,6 +347,7 @@ class Nig {
 
                 trophies: new Array(8).fill(false),
                 smalltrophies: new Array(100).fill(false),
+                smalltrophies2nd: new Array(100).fill(false),
 
                 levelitems: new Array(5).fill(0),
                 levelitembought: 0,
@@ -424,6 +436,7 @@ class Nig {
 
             trophies: playerData.trophies ?? new Array(8).fill(false),
             smalltrophies: playerData.smalltrophies ?? new Array(100).fill(false),
+            smalltrophies2nd: playerData.smalltrophies2nd ?? new Array(100).fill(false),
 
             levelitems: playerData.levelitems ?? new Array(5).fill(0),
             levelitembought: playerData.levelitembought ?? 0,
@@ -920,12 +933,14 @@ class Nig {
         this.loadPlayer(this.players[this.world]);
     };
     openPipe(i) {
-        if (this.player.worldpipe[i] == 1) return;
+        let maxpipe = 1;
+        if (this.player.trophies[7]) maxpipe = 2;
+        if (this.player.worldpipe[i] >= maxpipe) return;
         let havepipe = Math.floor((this.smallmemory - 72) / 3);
         for (let j = 0; j < 10; j++) {
             havepipe -= this.player.worldpipe[j];
         }
-        if (havepipe > 0) this.player.worldpipe[i] = 1;
+        if (havepipe > 0) this.player.worldpipe[i] += 1;
     };
     checkTrophies() {
         if (this.player.levelresettime.gt(0)) this.player.trophies[0] = true;
@@ -1037,6 +1052,21 @@ class Nig {
         if (this.player.darklevel.greaterThan(0)) this.player.smalltrophies[97] = true;
         if (this.player.darklevel.greaterThan('1e3')) this.player.smalltrophies[98] = true;
         if (this.player.darklevel.greaterThan('1e10')) this.player.smalltrophies[99] = true;
+
+        if (this.player.crownresettime.gt(0)) {
+            if(this.player.crownresettime.gt(0))this.player.smalltrophies2nd[0] = true
+            if(this.player.crownresettime.gte(5))this.player.smalltrophies2nd[1] = true
+            if(this.player.crownresettime.gte(20))this.player.smalltrophies2nd[2] = true
+            if(this.player.crownresettime.gte(100))this.player.smalltrophies2nd[3] = true
+            if(this.player.accelevel>=1)this.player.smalltrophies2nd[4] = true
+            if(this.player.accelevel>=3)this.player.smalltrophies2nd[5] = true
+            if(this.player.accelevel>=6)this.player.smalltrophies2nd[6] = true
+            if(this.player.accelevel>=10)this.player.smalltrophies2nd[7] = true
+            if(this.player.rank.gt('1e8'))this.player.smalltrophies2nd[8] = true
+            if(this.player.rank.gt('1e10'))this.player.smalltrophies2nd[9] = true
+            if(this.player.rank.gt('1e12'))this.player.smalltrophies2nd[10] = true
+
+        }
     };
     checkMemories() {
         this.memory = 0;
@@ -1048,12 +1078,16 @@ class Nig {
     checkPipedSmallMemories() {
         let sum = 0;
         for (let i = 0; i < 10; i++) {
-            if (this.players[i].worldpipe[this.world] == 1) {
+            if (this.players[i].worldpipe[this.world] >= 1) {
                 let cnt = 0;
                 for (let j = 0; j < 100; j++) {
                     if (this.players[i].smalltrophies[j]) cnt++;
                 }
+                for (let j = 0; j < 100; j++) {
+                    if (this.players[i].smalltrophies2nd[j]) cnt++;
+                }
                 cnt -= 75;
+                cnt *= this.players[i].worldpipe[this.world];
                 this.eachpipedsmallmemory[i] = cnt;
                 sum += cnt;
             } else {
@@ -1064,6 +1098,7 @@ class Nig {
     };
     checkSmallMemories() {
         this.smallmemory = this.player.smalltrophies.reduce((x, y) => x + (y ? 1 : 0), 0);
+        this.smallmemory += this.player.smalltrophies2nd.reduce((x, y) => x + (y ? 1 : 0), 0);
     };
     countRemembers() {
         let cnt = 0;

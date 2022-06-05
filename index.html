@@ -329,7 +329,7 @@
               1 : 0), 0) - 72) / 3)) }}</td>
             <td class="align-middle" v-for="j in 10" :key="j" v-show="nig.worldopened[j-1]"
               :style="{ 'background-color': i==j ? 'lightgray' : 'transparent' }">
-              {{ nig.players[i-1].worldpipe[j-1] ? '〇' : '' }}
+              {{ nig.players[i-1].worldpipe[j-1] ? nig.players[i-1].worldpipe[j-1] : '' }}
             </td>
           </tr>
         </tbody>
@@ -391,6 +391,14 @@
                   <span>{{ nig.player.smalltrophies[i*10+j-11] ? (i-1)*10+j : '　' }}</span>
                   <span class="uptooltip" v-if="spoiler">
                     {{ itemdata.smalltrophytext[i*10+j-11] }}
+                  </span>
+                </td>
+              </tr>
+              <tr v-for="i in 2" :key="i" v-if="nig.player.crownresettime.gt(0)">
+                <td v-for="j in 10" :key="j" class="tooltipcell">
+                  <span>{{ nig.player.smalltrophies2nd[i*10+j-11] ? 100+(i-1)*10+j : '　' }}</span>
+                  <span class="uptooltip" v-if="spoiler">
+                    {{ itemdata.smalltrophytext[100+i*10+j-11] }}
                   </span>
                 </td>
               </tr>
