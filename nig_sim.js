@@ -273,7 +273,7 @@ class MaximumBonuses {
             for (let j = 0; j < effectivechallengebonuses.length; j++) {
                 if (!(i & 1 << j)) {
                     costs[i ^ 1 << j] = costs[i] + itemdata.rewardcost[effectivechallengebonuses[j]];
-                    ok &= costs[i ^ 1 << j] > mxtoken;
+                    ok &= costs[i ^ 1 << j] > mxtoken || (rank && effectivechallengebonuses[j] === 9);
                 }
             }
             if (ok && costs[i] <= mxtoken) {
@@ -281,12 +281,6 @@ class MaximumBonuses {
                 for (let j = 0; j < effectivechallengebonuses.length; j++) {
                     if (i & 1 << j) {
                         cs.push(effectivechallengebonuses[j]);
-                    }
-                }
-                if (rank) {
-                    const mask34679 = 0b11111;
-                    if ((i & mask34679) == mask34679 && mxtoken - costs[i] + itemdata.rewardcost[9] < 32) {
-                        challengebonusescandidates.push(cs.filter(c => c !== 9));
                     }
                 }
                 challengebonusescandidates.push(cs);
