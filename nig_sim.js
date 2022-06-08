@@ -283,7 +283,10 @@ class MaximumBonuses {
                         cs.push(effectivechallengebonuses[j]);
                     }
                 }
-                challengebonusescandidates.push(cs);
+                /* 上位効力4は上位効力5の上位互換 */
+                if (rank && !cs.includes(3) && cs.includes(4)) {} else {
+                    challengebonusescandidates.push(cs);
+                }
             }
         }
         return challengebonusescandidates;
