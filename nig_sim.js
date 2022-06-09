@@ -366,6 +366,7 @@ class Nig {
         this.multbyac = D(1);
         this.memory = 0;
         this.smallmemory = 0;
+        this.smallmemories = new Array(10).fill(0);
         this.eachpipedsmallmemory = new Array(10).fill(null).map(() => 0);
         this.pipedsmallmemory = 0;
         this.worldopened = new Array(10).fill().map(() => false);
@@ -1076,13 +1077,7 @@ class Nig {
         let sum = 0;
         for (let i = 0; i < 10; i++) {
             if (this.players[i].worldpipe[this.world] >= 1) {
-                let cnt = 0;
-                for (let j = 0; j < 100; j++) {
-                    if (this.players[i].smalltrophies[j]) cnt++;
-                }
-                for (let j = 0; j < 100; j++) {
-                    if (this.players[i].smalltrophies2nd[j]) cnt++;
-                }
+                let cnt = this.smallmemories[i];
                 cnt -= 75;
                 cnt *= this.players[i].worldpipe[this.world];
                 this.eachpipedsmallmemory[i] = cnt;
@@ -1094,8 +1089,11 @@ class Nig {
         this.pipedsmallmemory = sum;
     };
     checkSmallMemories() {
-        this.smallmemory = this.player.smalltrophies.reduce((x, y) => x + (y ? 1 : 0), 0);
-        this.smallmemory += this.player.smalltrophies2nd.reduce((x, y) => x + (y ? 1 : 0), 0);
+        for (let i = 0; i < 10; i++) {
+            this.smallmemories[i] = this.players[i].smalltrophies.reduce((x, y) => x + (y ? 1 : 0), 0);
+            this.smallmemories[i] += this.players[i].smalltrophies2nd.reduce((x, y) => x + (y ? 1 : 0), 0);
+        }
+        this.smallmemory = this.smallmemories[this.world];
     };
     countRemembers() {
         let cnt = 0;

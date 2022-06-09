@@ -312,6 +312,7 @@
             <td class="align-middle"></td>
             <td class="align-middle">記憶</td>
             <td class="align-middle">思い出</td>
+            <td class="align-middle">里程</td>
             <td class="align-middle">世界管</td>
             <td class="align-middle" v-for="j in 10" :key="j" v-show="nig.worldopened[j-1]">{{ j }}</td>
           </tr>
@@ -325,8 +326,8 @@
             </td>
             <td class="align-middle">{{ nig.players[i-1].trophies.reduce((x, y) => x + (y ? 1 : 0), 0) }}</td>
             <td class="align-middle">{{ nig.players[i-1].remember }}</td>
-            <td class="align-middle">{{ Math.max(0, Math.floor((nig.players[i-1].smalltrophies.reduce((x, y) => x + (y ?
-              1 : 0), 0) - 72) / 3)) }}</td>
+            <td class="align-middle">{{ nig.smallmemories[i-1] }}</td>
+            <td class="align-middle">{{ Math.max(0, Math.floor((nig.smallmemories[i-1] - 72) / 3)) }}</td>
             <td class="align-middle" v-for="j in 10" :key="j" v-show="nig.worldopened[j-1]"
               :style="{ 'background-color': i==j ? 'lightgray' : 'transparent' }">
               {{ nig.players[i-1].worldpipe[j-1] ? nig.players[i-1].worldpipe[j-1] : '' }}
