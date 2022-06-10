@@ -1570,6 +1570,7 @@ const app = Vue.createApp({
             checkpointtarget: 'point',
             checkpointvalue: '',
             procmspertick: 0,
+            verbose: false,
             spoiler: false,
         }
     },
@@ -1644,9 +1645,9 @@ const app = Vue.createApp({
                     const sec = mres.sec.add(mres.tick.mul(this.procmspertick * 0.001));
                     message = mres.tick.toExponential(3) + ' ticks';
                     message += '<br/>(' + sec.toExponential(3) + ' sec)';
-                    if (this.challengeConfig.searchChallengeBonuses && mres.challengebonuses.length > 0) message += '<br/>効力' + mres.challengebonuses.map(x => x + 1);
-                    if (this.challengeConfig.searchRankChallengeBonuses && mres.rankchallengebonuses.length > 0) message += '<br/>上位効力' + mres.rankchallengebonuses.map(x => x + 1);
-                    if (this.challengeConfig.searchAccelLevel && this.nig.player.accelevel > 0) message += '<br/>起動時間回帰力' + mres.accelevelused;
+                    if ((this.verbose || this.challengeConfig.searchChallengeBonuses) && mres.challengebonuses.length > 0) message += '<br/>効力' + mres.challengebonuses.map(x => x + 1);
+                    if ((this.verbose || this.challengeConfig.searchRankChallengeBonuses) && mres.rankchallengebonuses.length > 0) message += '<br/>上位効力' + mres.rankchallengebonuses.map(x => x + 1);
+                    if ((this.verbose || this.challengeConfig.searchAccelLevel) && this.nig.player.accelevel > 0) message += '<br/>起動時間回帰力' + mres.accelevelused;
                     // message += '<br/>id: ' + id;
                 }
                 return message;
