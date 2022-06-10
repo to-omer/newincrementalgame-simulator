@@ -1646,7 +1646,7 @@ const app = Vue.createApp({
                     message += '<br/>(' + sec.toExponential(3) + ' sec)';
                     if (this.challengeConfig.searchChallengeBonuses && mres.challengebonuses.length > 0) message += '<br/>効力' + mres.challengebonuses.map(x => x + 1);
                     if (this.challengeConfig.searchRankChallengeBonuses && mres.rankchallengebonuses.length > 0) message += '<br/>上位効力' + mres.rankchallengebonuses.map(x => x + 1);
-                    if (this.nig.player.accelevel > 0) message += '<br/>起動時間回帰力' + mres.accelevelused;
+                    if (this.challengeConfig.searchAccelLevel && this.nig.player.accelevel > 0) message += '<br/>起動時間回帰力' + mres.accelevelused;
                     // message += '<br/>id: ' + id;
                 }
                 return message;
