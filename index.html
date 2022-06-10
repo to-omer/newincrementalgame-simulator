@@ -44,7 +44,8 @@
 
       <input type="checkbox" class="btn-check" id="rankInfoB" autocomplete="off">
       <label class="btn btn-outline-dark" for="rankInfoB" data-bs-toggle="collapse" data-bs-target="#rankInfo"
-        aria-expanded="false" aria-controls="rankInfo" v-if="nig.player.rankresettime.gt(0) || nig.player.crownresettime.gt(0)">階位</label>
+        aria-expanded="false" aria-controls="rankInfo"
+        v-if="nig.player.rankresettime.gt(0) || nig.player.crownresettime.gt(0)">階位</label>
 
       <input type="checkbox" class="btn-check" id="shineInfoB" autocomplete="off">
       <label class="btn btn-outline-dark" for="shineInfoB" data-bs-toggle="collapse" data-bs-target="#shineInfo"
@@ -83,7 +84,8 @@
       <div class="card card-body">
         <div v-if="nig.worldopened.slice(1).some(b => b)">世界: {{ nig.world+1 }}</div>
         <div id="money">ポイント: {{ formatDecimal(nig.player.money, 6) }}</div>
-        <div v-if="nig.player.levelresettime.gt(0) || nig.player.rankresettime.gt(0) || nig.player.crownresettime.gt(0)">
+        <div
+          v-if="nig.player.levelresettime.gt(0) || nig.player.rankresettime.gt(0) || nig.player.crownresettime.gt(0)">
           段位: {{ formatDecimal(nig.player.level, 6) }} 段位リセット: {{ formatDecimal(nig.player.levelresettime, 6) }}
         </div>
         <div v-if="nig.player.rankresettime.gt(0) || nig.player.crownresettime.gt(0)">
@@ -92,7 +94,8 @@
         <div v-if="nig.player.crownresettime.gt(0)">
           冠位: {{ formatDecimal(nig.player.crown, 6) }} 冠位リセット: {{ formatDecimal(nig.player.crownresettime, 6) }}
         </div>
-        <div v-if="nig.player.levelresettime.gt(0) || nig.player.rankresettime.gt(0) || nig.player.crownresettime.gt(0)">
+        <div
+          v-if="nig.player.levelresettime.gt(0) || nig.player.rankresettime.gt(0) || nig.player.crownresettime.gt(0)">
           最大取得段位: {{ formatDecimal(nig.player.maxlevelgained, 6) }}
         </div>
         <div v-if="nig.player.challengecleared.length>0">挑戦達成: {{ nig.player.challengecleared.length }}</div>
@@ -552,10 +555,12 @@
             <option value="rankreset">階位リセット</option>
             <option value="crownreset">冠位リセット</option>
           </select>
-          <span class="input-group-text" v-if="checkpointtarget=='levelreset' || checkpointtarget=='rankreset' || checkpointtarget=='crownreset'">で</span>
+          <span class="input-group-text"
+            v-if="checkpointtarget=='levelreset' || checkpointtarget=='rankreset' || checkpointtarget=='crownreset'">で</span>
           <input type="text" class="form-control" v-model="checkpointvalue" placeholder="start[:stop[:[*]step]]"
             aria-label="Text input" @keydown="(event)=>{if(event.key==='Enter')addcheckpoint()}">
-          <span class="input-group-text" v-if="checkpointtarget=='levelreset' || checkpointtarget=='rankreset' || checkpointtarget=='crownreset'">
+          <span class="input-group-text"
+            v-if="checkpointtarget=='levelreset' || checkpointtarget=='rankreset' || checkpointtarget=='crownreset'">
             {{ {levelreset: '段位', rankreset: '階位', crownreset: '冠位'}[checkpointtarget] }}獲得する
           </span>
           <span class="input-group-text">{{ tmoneysDesc }} </span>

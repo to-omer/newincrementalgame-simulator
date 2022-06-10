@@ -284,7 +284,7 @@ class MaximumBonuses {
                     }
                 }
                 /* 上位効力4は上位効力5の上位互換 */
-                if (rank && !cs.includes(3) && cs.includes(4)) {} else {
+                if (rank && !cs.includes(3) && cs.includes(4)) { } else {
                     challengebonusescandidates.push(cs);
                 }
             }
@@ -1052,17 +1052,17 @@ class Nig {
         if (this.player.darklevel.greaterThan('1e10')) this.player.smalltrophies[99] = true;
 
         if (this.player.crownresettime.gt(0)) {
-            if(this.player.crownresettime.gt(0))this.player.smalltrophies2nd[0] = true;
-            if(this.player.crownresettime.gte(5))this.player.smalltrophies2nd[1] = true;
-            if(this.player.crownresettime.gte(20))this.player.smalltrophies2nd[2] = true;
-            if(this.player.crownresettime.gte(100))this.player.smalltrophies2nd[3] = true;
-            if(this.player.accelevel>=1)this.player.smalltrophies2nd[4] = true;
-            if(this.player.accelevel>=3)this.player.smalltrophies2nd[5] = true;
-            if(this.player.accelevel>=6)this.player.smalltrophies2nd[6] = true;
-            if(this.player.accelevel>=10)this.player.smalltrophies2nd[7] = true;
-            if(this.player.rank.gt('1e8'))this.player.smalltrophies2nd[8] = true;
-            if(this.player.rank.gt('1e10'))this.player.smalltrophies2nd[9] = true;
-            if(this.player.rank.gt('1e12'))this.player.smalltrophies2nd[10] = true;
+            if (this.player.crownresettime.gt(0)) this.player.smalltrophies2nd[0] = true;
+            if (this.player.crownresettime.gte(5)) this.player.smalltrophies2nd[1] = true;
+            if (this.player.crownresettime.gte(20)) this.player.smalltrophies2nd[2] = true;
+            if (this.player.crownresettime.gte(100)) this.player.smalltrophies2nd[3] = true;
+            if (this.player.accelevel >= 1) this.player.smalltrophies2nd[4] = true;
+            if (this.player.accelevel >= 3) this.player.smalltrophies2nd[5] = true;
+            if (this.player.accelevel >= 6) this.player.smalltrophies2nd[6] = true;
+            if (this.player.accelevel >= 10) this.player.smalltrophies2nd[7] = true;
+            if (this.player.rank.gt('1e8')) this.player.smalltrophies2nd[8] = true;
+            if (this.player.rank.gt('1e10')) this.player.smalltrophies2nd[9] = true;
+            if (this.player.rank.gt('1e12')) this.player.smalltrophies2nd[10] = true;
 
         }
     };
@@ -1103,8 +1103,8 @@ class Nig {
     };
     checkWorlds() {
         this.worldopened[0] = true;
-        if (D(this.players[0].crownresettime).gt(0)){
-            for(let i = 1; i < 10; i++){
+        if (D(this.players[0].crownresettime).gt(0)) {
+            for (let i = 1; i < 10; i++) {
                 this.worldopened[i] = true;
             }
         }
@@ -1462,7 +1462,7 @@ class Nig {
             config,
         };
         let accelevelcandidates = config.searchAccelLevel
-            ? Array.from(new Array(this.player.accelevel+1).keys())
+            ? Array.from(new Array(this.player.accelevel + 1).keys())
             : [this.player.accelevelused];
         let challengebonusescandidates = config.searchChallengeBonuses
             ? mbcache.get(this.player.challengecleared.length, false, true)
