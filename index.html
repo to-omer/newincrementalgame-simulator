@@ -312,6 +312,7 @@
             <td class="align-middle"></td>
             <td class="align-middle">記憶</td>
             <td class="align-middle">思い出</td>
+            <td class="align-middle">里程</td>
             <td class="align-middle">世界管</td>
             <td class="align-middle" v-for="j in 10" :key="j" v-show="nig.worldopened[j-1]">{{ j }}</td>
           </tr>
@@ -325,8 +326,8 @@
             </td>
             <td class="align-middle">{{ nig.players[i-1].trophies.reduce((x, y) => x + (y ? 1 : 0), 0) }}</td>
             <td class="align-middle">{{ nig.players[i-1].remember }}</td>
-            <td class="align-middle">{{ Math.max(0, Math.floor((nig.players[i-1].smalltrophies.reduce((x, y) => x + (y ?
-              1 : 0), 0) - 72) / 3)) }}</td>
+            <td class="align-middle">{{ nig.smallmemories[i-1] }}</td>
+            <td class="align-middle">{{ Math.max(0, Math.floor((nig.smallmemories[i-1] - 72) / 3)) }}</td>
             <td class="align-middle" v-for="j in 10" :key="j" v-show="nig.worldopened[j-1]"
               :style="{ 'background-color': i==j ? 'lightgray' : 'transparent' }">
               {{ nig.players[i-1].worldpipe[j-1] ? nig.players[i-1].worldpipe[j-1] : '' }}
@@ -437,6 +438,11 @@
         <div class="form-check form-check-inline" v-if="nig.player.challengecleared.length>0">
           <input type="checkbox" class="form-check-input" id="toggleBonuses" v-model="challengeConfig.toggleBonuses">
           <label class="form-check-label" for="toggleBonuses">リセット時効力切り替え</label>
+        </div>
+        <div class="form-check form-check-inline" v-if="nig.player.accelevel>0">
+          <input type="checkbox" class="form-check-input" id="searchAccelLevel"
+            v-model="challengeConfig.searchAccelLevel">
+          <label class="form-check-label" for="searchAccelLevel">回帰力探索</label>
         </div>
       </div>
       <nav>
@@ -588,7 +594,9 @@
           効力探索が有効なら、効力5と併用して使用する効力の候補として効力3,4,7,8,11,12,14の極大集合を全探索する。
           上位効力探索が有効なら、使用する上位効力の候補として上位効力4,5,7,8,10?,11,12,14の極大集合を全探索する。
           段位効力2を購入しているなら、より良い効力の組み合わせが存在することがある。
+          時間回帰力探索が有効なら、0から最大値まで全探索する。
           モードは発生器iならi-1固定。
+
         </p>
       </div>
       <div class="card-body">
