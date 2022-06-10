@@ -1461,15 +1461,9 @@ class Nig {
             },
             config,
         };
-        let accelevelcandidates = [];
-        if (config.searchAccelLevel && this.player.accelevel > 0) {
-            accelevelcandidates.push(1);
-            if (this.player.accelevel > 1) {
-                accelevelcandidates.push(this.player.accelevel);
-            }
-        } else {
-            accelevelcandidates.push(this.player.accelevelused);
-        }
+        let accelevelcandidates = config.searchAccelLevel
+            ? Array.from(new Array(this.player.accelevel+1).keys())
+            : [this.player.accelevelused];
         let challengebonusescandidates = config.searchChallengeBonuses
             ? mbcache.get(this.player.challengecleared.length, false, true)
             : [new Array(15).fill().map((_, i) => i).filter(i => this.player.challengebonuses[i])];
