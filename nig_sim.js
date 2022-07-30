@@ -645,7 +645,7 @@ class Nig {
         for (let i = 0; i <= highest; i++) d[i + 1][0] = this.player.darkgenerators[i];
         const darkmult = this.softCap(this.player.darklevel.add(1), D(1e3));
         for (let i = highest + 1; i-- > 0;) {
-            let mult = mu.mul(this.player.lightgenerators[i]);
+            let mult = mu.mul(this.player.lightgenerators[i].add(1));
             mult = mult.mul(darkmult);
             mult = mult.mul(1 + this.player.setchip[41 + i] * 0.25);
             mult = mult.mul(1 + this.eachpipedsmallmemory[5] * 0.2);
