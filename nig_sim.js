@@ -75,6 +75,7 @@ class ItemData {
             '煌く者',
             '想い出す者',
             '有冠者',
+            '天上の者'
         ];
         this.smalltrophytext = [
             'ポイントを0より大きくする',
@@ -188,8 +189,23 @@ class ItemData {
             '階位を1e8より大きくする',
             '階位を1e10より大きくする',
             '階位を1e12より大きくする',
+            '天上発生器1を1つ以上購入する',
+            '天上発生器2を1つ以上購入する',
+            '天上発生器3を1つ以上購入する',
+            '天上発生器4を1つ以上購入する',
+            '天上発生器5を1つ以上購入する',
+            '天上発生器6を1つ以上購入する',
+            '天上発生器7を1つ以上購入する',
+            '天上発生器8を1つ以上購入する',
+            '紫鋼片を1個以上にする',
+            '紫鋼片を210個以上にする',
+            '紫鋼片を1275個以上にする',
+            '銅像を10個以上にする',
+            '銀像を10個以上にする',
+            '金像を10個以上にする',
+            '白金像を10個以上にする'
         ]
-        this.chipname = ['銅片', '銀片', '金片', '白金片'];
+        this.chipname = ['銅', '銀', '金', '白金', '紫鋼', '朱鋼', '蒼鋼', '翠鋼', '聖銀', '覇金'];
         this.chipbonusname = [
             '発生器効率',
             '発生器1効率',
@@ -242,7 +258,7 @@ class ItemData {
             '裏発生器8生産強化',
             '煌き入手割合',
             '煌き使用効率',
-            '煌き使用効率裏(工事中)',
+            '煌き使用効率裏',
         ];
     }
 };
@@ -295,8 +311,8 @@ class MaximumBonuses {
 
 const mbcache = new MaximumBonuses();
 
-const trophynum = 8;
-const setchipkind = 4;
+const trophynum = 9;
+const setchipkind = 10;
 const setchipnum = 100;
 
 class Nig {
@@ -333,6 +349,11 @@ class Nig {
                 darkgeneratorsCost: [D('1e100'), D('1e108'), D('1e127'), D('1e164'), D('1e225'), D('1e316'), D('1e443'), D('1e612')],
                 darklevel: D(0),
 
+                lightmoney:　D(0),
+                lightgenerators: new Array(8).fill(D(0)),
+                lightgeneratorsBought: new Array(8).fill(D(0)),
+                lightgeneratorsCost: [D('1e200'), D('1e216'), D('1e281'), D('1e456'), D('1e825'), D('1e1496'), D('1e2601'), D('1e4296')],
+
                 tickspeed: 1000,
                 accelevel: 0,
                 accelevelused: 0,
@@ -357,6 +378,7 @@ class Nig {
 
                 chip: new Array(setchipkind).fill(0),
                 setchip: new Array(setchipnum).fill(0),
+                statue: new Array(setchipkind).fill(0),
 
                 worldpipe: new Array(10).fill(null).map(() => 0),
             };
@@ -423,6 +445,12 @@ class Nig {
             darkgeneratorsCost: playerData.darkgeneratorsCost.map(D),
             darklevel: D(playerData.darklevel),
 
+            lightmoney: D(playerData.lightmoney ?? 0),
+            lightgenerators: playerData.lightgenerators.map(D),
+            lightgeneratorsBought: playerData.lightgeneratorsBought.map(D),
+            lightgeneratorsCost: playerData.lightgeneratorsCost.map(D),
+
+
             tickspeed: parseFloat(playerData.tickspeed),
             accelevel: playerData.accelevel ?? 0,
             accelevelused: playerData.accelevelused ?? 0,
@@ -447,6 +475,7 @@ class Nig {
 
             chip: playerData.chip ?? new Array(setchipkind).fill(0),
             setchip: playerData.setchip ?? new Array(setchipnum).fill(0),
+            statue: playerData.statue ?? new Array(setchipkind).fill(0),
 
             worldpipe: playerData.worldpipe ?? new Array(10).fill(null).map(() => 0),
         };
@@ -460,6 +489,7 @@ class Nig {
         for (let i = 0; i < 8; i++) this.calcGeneratorCost(i, this.player.generatorsBought[i], true);
         for (let i = 0; i < 8; i++) this.calcAcceleratorCost(i, this.player.acceleratorsBought[i], true);
         for (let i = 0; i < 8; i++) this.calcDarkGeneratorCost(i, this.player.darkgeneratorsBought[i], true);
+        for (let i = 0; i < 8; i++) this.calcLightGeneratorCost(i, this.player.lightgeneratorsBought[i], true);
     };
 
     clone() {
@@ -517,7 +547,8 @@ class Nig {
         // if (d.getMonth() == 0 && d.getDate() <= 7) camp = camp + 1;
         // if (d.getMonth() == 1 && 8 <= d.getDate() && d.getDate() <= 14) camp = camp + 1;
         // if ((d.getMonth() == 1 && 25 <= d.getDate()) || ((d.getMonth() == 2 && d.getDate() <= 3))) camp = camp + 1;
-        if (camp > 4) camp = 4;
+        if ((d.getMonth() == 6 && 27 <= d.getDate()) || ((d.getMonth() == 7 && d.getDate() < 27))) camp = camp + 2;
+        if (camp > 6) camp = 6;
         mult = mult.mul(1 + 4 * camp);
 
 
@@ -612,9 +643,10 @@ class Nig {
         let d = Array.from(new Array(9), (_, i) => new Array(Math.max(0, highest + 2 - i)).fill(D(0)));
         d[0][0] = this.player.darkmoney;
         for (let i = 0; i <= highest; i++) d[i + 1][0] = this.player.darkgenerators[i];
-        const darkmult = this.softCap(this.player.darklevel.add(1), D(1e10));
+        const darkmult = this.softCap(this.player.darklevel.add(1), D(1e3));
         for (let i = highest + 1; i-- > 0;) {
-            let mult = darkmult.mul(mu);
+            let mult = mu.mul(this.player.lightgenerators[i]);
+            mult = mult.mul(darkmult);
             mult = mult.mul(1 + this.player.setchip[41 + i] * 0.25);
             mult = mult.mul(1 + this.eachpipedsmallmemory[5] * 0.2);
             d[i + 1].forEach((dd, j) => d[i][j + 1] = d[i][j + 1].add(dd.mul(mult)));
@@ -669,9 +701,10 @@ class Nig {
         if (this.player.brightness < num) return;
         this.player.brightness -= num;
         const val = D(11 + this.player.setchip[50]).pow(D(num * 100).log10());
+        const vald = D(10 + this.player.setchip[51]*0.25).pow(D(num).log10());
         this.updateGenerators(val);
         this.updateAccelerators(val);
-        this.updateDarkGenerators(D(num));
+        this.updateDarkGenerators(vald);
     };
 
     isChallengeActive(index) {
@@ -751,6 +784,26 @@ class Nig {
         this.player.darkgenerators[index] = this.player.darkgenerators[index].add(1);
         this.player.darkgeneratorsBought[index] = this.player.darkgeneratorsBought[index].add(1);
         this.calcDarkGeneratorCost(index, this.player.darkgeneratorsBought[index], true);
+        return true;
+    };
+
+    isLightGeneratorBuyable(index) {
+        return this.player.money.gte(this.player.lightgeneratorsCost[index]);
+    };
+    calcLightGeneratorCost(index, bought, update = false) {
+        let p = 200 + (index === 0 ? 0 : (index + 1) * (index + 1) * (index + 1) * (index + 1));
+        let q = bought.mul(index + 1).mul(index + 1).mul(index + 1);
+        q = q.add(p);
+        const cost = D(10).pow(q);
+        if (update) this.player.lightgeneratorsCost[index] = cost;
+        return cost;
+    };
+    buyLightGenerator(index) {
+        if (!this.isLightGeneratorBuyable(index)) return false;
+        this.player.money = this.player.money.sub(this.player.lightgeneratorsCost[index]);
+        this.player.lightgenerators[index] = this.player.lightgenerators[index].add(1);
+        this.player.lightgeneratorsBought[index] = this.player.lightgeneratorsBought[index].add(1);
+        this.calcLightGeneratorCost(index, this.player.lightgeneratorsBought[index], true);
         return true;
     };
 
@@ -845,7 +898,7 @@ class Nig {
                 }
             }
         }
-        gainlevel = gainlevel.round();
+        gainlevel = gainlevel.round().max(1);
         gainlevel = gainlevel.mul(1 + this.eachpipedsmallmemory[2] * 0.2);
         if (this.isChallengeBonusActive(12)) gainlevel = gainlevel.mul(2);
         return gainlevel;
@@ -943,6 +996,22 @@ class Nig {
         }
         if (havepipe > 0) this.player.worldpipe[i] += 1;
     };
+
+    isStatueBuildable(i) {
+        let cost = this.calcStatueCost(i);
+        if (this.player.chip[i] < cost) return false;
+        return true;
+    };
+    calcStatueCost(i){
+        return (this.player.statue[i] + 1) * 10000;
+    };
+    buildStatue(i){
+        let cost = this.calcStatueCost(i);
+        if (this.player.chip[i] < cost) return;
+        this.player.chip[i] -= cost;
+        this.player.statue[i] += 1;
+    };
+
     checkTrophies() {
         if (this.player.levelresettime.gt(0)) this.player.trophies[0] = true;
         if (this.player.rankresettime.gt(0)) this.player.trophies[1] = true;
@@ -952,6 +1021,7 @@ class Nig {
         if (this.player.remember > 0) this.player.trophies[6] = true;
         if (this.world == 0 && this.countRemembers() > 0) this.player.trophies[6] = true;
         if (this.player.crownresettime.gt(0)) this.player.trophies[7] = true;
+        if (this.player.lightgenerators[0].gt(0)) this.player.trophies[8] = true;
 
         if (this.player.money.gt(0)) this.player.smalltrophies[0] = true;
         if (this.player.money.gt(777)) this.player.smalltrophies[1] = true;
@@ -1066,7 +1136,21 @@ class Nig {
             if (this.player.rank.gt('1e8')) this.player.smalltrophies2nd[8] = true;
             if (this.player.rank.gt('1e10')) this.player.smalltrophies2nd[9] = true;
             if (this.player.rank.gt('1e12')) this.player.smalltrophies2nd[10] = true;
-
+            if (this.player.lightgenerators[0].gte(1)) this.player.smalltrophies2nd[11] = true;
+            if (this.player.lightgenerators[1].gte(1)) this.player.smalltrophies2nd[12] = true;
+            if (this.player.lightgenerators[2].gte(1)) this.player.smalltrophies2nd[13] = true;
+            if (this.player.lightgenerators[3].gte(1)) this.player.smalltrophies2nd[14] = true;
+            if (this.player.lightgenerators[4].gte(1)) this.player.smalltrophies2nd[15] = true;
+            if (this.player.lightgenerators[5].gte(1)) this.player.smalltrophies2nd[16] = true;
+            if (this.player.lightgenerators[6].gte(1)) this.player.smalltrophies2nd[17] = true;
+            if (this.player.lightgenerators[7].gte(1)) this.player.smalltrophies2nd[18] = true;
+            if (this.player.chip[4]>0) this.player.smalltrophies[19] = true;
+            if (this.player.chip[4]>=210) this.player.smalltrophies[20] = true;
+            if (this.player.chip[4]>=1275) this.player.smalltrophies[21] = true;
+            if (this.player.statue[0]>=10) this.player.smalltrophies[22] = true;
+            if (this.player.statue[1]>=10) this.player.smalltrophies[23] = true;
+            if (this.player.statue[2]>=10) this.player.smalltrophies[24] = true;
+            if (this.player.statue[3]>=10) this.player.smalltrophies[25] = true;
         }
     };
     checkMemories() {
@@ -1547,10 +1631,13 @@ const colorbarpower = f => {
 const app = Vue.createApp({
     data() {
         return {
+            TROPHY_NUM: trophynum,
+            SET_CHIP_KIND: setchipkind,
+            SET_CHIP_NUM: setchipnum,
             nig: new Nig(),
             itemdata: itemdata,
             shinechallengelength: [64, 96, 128, 160, 192, 224],
-            brightnessrankchallengelength: [32, 64, 128],
+            brightnessrankchallengelength: [32, 64, 128, 255],
             simulatedcheckpoints: Array.from(new Array(10), () => new Map()),
             challengesimulated: Array.from(new Array(10), () => new Array(256).fill(null)),
             rankchallengesimulated: Array.from(new Array(10), () => new Array(256).fill(null)),
@@ -1769,6 +1856,10 @@ const app = Vue.createApp({
             this.nig.buyDarkGenerator(i);
             this.clearAllCache();
         },
+        buyLightGenerator(i) {
+            this.nig.buyLightGenerator(i);
+            this.clearAllCache();
+        },
         toggleReward(i) {
             this.nig.toggleReward(i);
             this.clearCheckpointsCache();
@@ -1780,6 +1871,9 @@ const app = Vue.createApp({
         buyLevelitems(i) {
             this.nig.buyLevelitems(i);
             this.clearAllCache();
+        },
+        buildStatue(i) {
+            this.nig.buildStatue(i);
         },
         changeMode(i) {
             this.nig.changeMode(i);
