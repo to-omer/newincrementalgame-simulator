@@ -33,11 +33,6 @@
         aria-expanded="false" aria-controls="dbought"
         v-if="nig.player.money.gte('1e100') || nig.player.darkmoney.gt(0) || nig.player.darkgenerators.some(d => d.gt(0))">裏</label>
 
-      <input type="checkbox" class="btn-check" id="lboughtB" autocomplete="off">
-      <label class="btn btn-outline-dark" for="lboughtB" data-bs-toggle="collapse" data-bs-target="#lbought"
-        aria-expanded="false" aria-controls="lbought"
-        v-if="(nig.player.money.gte('1e200') && nig.player.crownresettime.gt(0)) || nig.player.lightmoney.gt(0) || nig.player.lightgenerators.some(d => d.gt(0))">天上</label>
-
       <input type="checkbox" class="btn-check" id="timeInfoB" autocomplete="off">
       <label class="btn btn-outline-dark" for="timeInfoB" data-bs-toggle="collapse" data-bs-target="#timeInfo"
         aria-expanded="false" aria-controls="timeInfo" v-if="nig.player.accelevel>0">時</label>
@@ -146,7 +141,7 @@
             <td class="d-grid">
               <button type="button" class="btn btn-outline-dark btn-sm" @click="buyGenerator(i-1)"
                 :disabled="!nig.isGeneratorBuyable(i-1)">
-                {{ nig.player.generatorsCost[i-1].toExponential(1) }}
+                {{ nig.player.generatorsCost[i-1].toExponential(3) }}
               </button>
             </td>
             <td class="align-middle">{{ nig.player.generatorsBought[i-1].toNumber() }}</td>
@@ -163,7 +158,7 @@
             <td class="d-grid" v-if="nig.isAcceleratorOpened(i-1)">
               <button type="button" class="btn btn-outline-dark btn-sm" @click="buyAccelerator(i-1)"
                 :disabled="!nig.isAcceleratorBuyable(i-1)">
-                {{ nig.player.acceleratorsCost[i-1].toExponential(1) }}
+                {{ nig.player.acceleratorsCost[i-1].toExponential(3) }}
               </button>
             </td>
             <td v-else></td>
@@ -182,6 +177,10 @@
           <tr>
             <td class="align-middle" colspan="2">裏ポイント</td>
             <td class="align-middle" colspan="2">{{ formatDecimal(nig.player.darkmoney, 6) }}</td>
+            <template v-if="isLightBought">
+              <td class="align-middle" colspan="2">天上ポイント</td>
+              <td class="align-middle" colspan="2">{{ formatDecimal(nig.player.lightmoney, 6) }}</td>
+            </template>
           </tr>
           <tr>
             <td class="align-middle" colspan="2">裏段位</td>
@@ -190,11 +189,20 @@
           <tr>
             <td class="align-middle" rowspan="2"></td>
             <td class="align-middle" colspan="3">裏発生器</td>
+            <template v-if="isLightBought">
+              <td class="align-middle" rowspan="2"></td>
+              <td class="align-middle" colspan="3">天上発生器</td>
+            </template>
           </tr>
           <tr>
             <td class="align-middle">所持数</td>
             <td class="align-middle">購入コスト</td>
             <td class="align-middle">購入数</td>
+            <template v-if="isLightBought">
+              <td class="align-middle">所持数</td>
+              <td class="align-middle">購入コスト</td>
+              <td class="align-middle">購入数</td>
+            </template>
           </tr>
         </thead>
         <tbody>
@@ -204,45 +212,22 @@
             <td class="d-grid">
               <button type="button" class="btn btn-outline-dark btn-sm" @click="buyDarkGenerator(i-1)"
                 :disabled="!nig.isDarkGeneratorBuyable(i-1)">
-                {{ nig.player.darkgeneratorsCost[i-1].toExponential(1) }}
+                {{ nig.player.darkgeneratorsCost[i-1].toExponential(3) }}
               </button>
             </td>
             <td class="align-middle">{{ nig.player.darkgeneratorsBought[i-1].toNumber() }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
 
-    <div class="collapse" id="lbought">
-      <table class="table table-bordered table-sm text-center" style="margin-bottom: 0px;">
-        <thead>
-          <!--
-          <tr>
-            <td class="align-middle" colspan="2">天上ポイント</td>
-            <td class="align-middle" colspan="2">{{ formatDecimal(nig.player.lightmoney, 6) }}</td>
-          </tr>
-          -->
-          <tr>
-            <td class="align-middle" rowspan="2"></td>
-            <td class="align-middle" colspan="3">天上発生器</td>
-          </tr>
-          <tr>
-            <td class="align-middle">所持数</td>
-            <td class="align-middle">購入コスト</td>
-            <td class="align-middle">購入数</td>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="i in 8" :key="i">
-            <td class="align-middle">{{ i }}</td>
-            <td class="align-middle">{{ nig.player.lightgenerators[i-1].toExponential(3) }}</td>
-            <td class="d-grid">
-              <button type="button" class="btn btn-outline-dark btn-sm" @click="buyLightGenerator(i-1)"
-                :disabled="!nig.isLightGeneratorBuyable(i-1)">
-                {{ nig.player.lightgeneratorsCost[i-1].toExponential(1) }}
-              </button>
-            </td>
-            <td class="align-middle">{{ nig.player.lightgeneratorsBought[i-1].toNumber() }}</td>
+            <template v-if="isLightBought">
+              <td class="align-middle">{{ i }}</td>
+              <td class="align-middle">{{ nig.player.lightgenerators[i-1].toExponential(3) }}</td>
+              <td class="d-grid">
+                <button type="button" class="btn btn-outline-dark btn-sm" @click="buyLightGenerator(i-1)"
+                  :disabled="!nig.isLightGeneratorBuyable(i-1)">
+                  {{ nig.player.lightgeneratorsCost[i-1].toExponential(1) }}
+                </button>
+              </td>
+              <td class="align-middle">{{ nig.player.lightgeneratorsBought[i-1].toNumber() }}</td>
+            </template>
           </tr>
         </tbody>
       </table>

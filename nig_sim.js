@@ -1808,6 +1808,11 @@ const app = Vue.createApp({
                 return name + ': \\(' + content + '\\)';
             };
         },
+        isLightBought() {
+            if (this.nig.player.money.gte('1e200') && this.nig.player.crownresettime.gt(0)) return true;
+            if (this.nig.player.lightmoney.gt(0)) return true;
+            return this.nig.player.lightgenerators.some(d => d.gt(0));
+        },
     },
     methods: {
         formatDecimal(d, places) {
