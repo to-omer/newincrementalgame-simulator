@@ -344,7 +344,7 @@
       <div class="card card-body">
         <div>
           所持鋳片
-          <span v-for="i in 4" :key="i">
+          <span v-for="i in setchipkind" :key="i">
             <span v-show="nig.player.chip[i-1]>0">
               {{ ' ' }} {{ itemdata.chipname[i-1] }}: {{ nig.player.chip[i-1] }}
             </span>
@@ -352,7 +352,7 @@
         </div>
         <div>
           コスト
-          <span v-for="i in 4" :key="i">
+          <span v-for="i in setchipkind" :key="i">
             <span v-show="nig.player.chip[i-1]>0">
               {{ ' ' }} {{ itemdata.chipname[i-1] }}: {{ nig.chipused[i-1]+1 }}
             </span>
@@ -379,7 +379,7 @@
           <table class="table-bordered table-sm">
             <tbody>
               <tr>
-                <td v-for="i in 8" :key="i">
+                <td v-for="i in trophynum" :key="i">
                   <span>{{ nig.player.trophies[i-1] ? itemdata.trophytext[i-1] : '???' }}</span>
                 </td>
               </tr>

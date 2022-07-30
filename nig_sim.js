@@ -295,6 +295,9 @@ class MaximumBonuses {
 
 const mbcache = new MaximumBonuses();
 
+const trophynum = 8;
+const setchipkind = 4;
+const setchipnum = 100;
 
 class Nig {
     constructor() {
@@ -342,7 +345,7 @@ class Nig {
                 rankchallengecleared: [],
                 rankchallengebonuses: new Array(15).fill(false),
 
-                trophies: new Array(8).fill(false),
+                trophies: new Array(trophynum).fill(false),
                 smalltrophies: new Array(100).fill(false),
                 smalltrophies2nd: new Array(100).fill(false),
 
@@ -352,8 +355,8 @@ class Nig {
                 remember: 0,
                 rememberspent: 0,
 
-                chip: [0, 0, 0, 0],
-                setchip: new Array(100).fill(0),
+                chip: new Array(setchipkind).fill(0),
+                setchip: new Array(setchipnum).fill(0),
 
                 worldpipe: new Array(10).fill(null).map(() => 0),
             };
@@ -370,7 +373,7 @@ class Nig {
         this.eachpipedsmallmemory = new Array(10).fill(null).map(() => 0);
         this.pipedsmallmemory = 0;
         this.worldopened = new Array(10).fill().map(() => false);
-        this.chipused = [0, 0, 0, 0];
+        this.chipused = new Array(setchipkind).fill(0);
         this.world = 0;
     };
 
@@ -432,7 +435,7 @@ class Nig {
             rankchallengecleared: playerData.rankchallengecleared ?? [],
             rankchallengebonuses: numarr2boolarr(playerData.rankchallengebonuses, 15) ?? new Array(15).fill(false),
 
-            trophies: playerData.trophies ?? new Array(8).fill(false),
+            trophies: playerData.trophies ?? new Array(trophynum).fill(false),
             smalltrophies: playerData.smalltrophies ?? new Array(100).fill(false),
             smalltrophies2nd: playerData.smalltrophies2nd ?? new Array(100).fill(false),
 
@@ -442,8 +445,8 @@ class Nig {
             remember: playerData.remember ?? 0,
             rememberspent: playerData.rememberspent ?? 0,
 
-            chip: playerData.chip ?? [0, 0, 0, 0],
-            setchip: playerData.setchip ?? new Array(100).fill(0),
+            chip: playerData.chip ?? new Array(setchipkind).fill(0),
+            setchip: playerData.setchip ?? new Array(setchipnum).fill(0),
 
             worldpipe: playerData.worldpipe ?? new Array(10).fill(null).map(() => 0),
         };
