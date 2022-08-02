@@ -321,7 +321,10 @@
 
     <div class="collapse" id="crownInfo">
       <div class="card card-body">
-        <div>※試験用:各種状態がリセットされません</div>
+        <div class="form-check">
+          <input class="form-check-input" id="doPC_reset" type="checkbox" v-model="do_perfect_challenge_reset">
+          <label class="form-check-label" for="doPC_reset">挑戦開始時に状態をリセットする</label>
+        </div>
         <div class="d-flex align-items-center flex-wrap">
           <div>完全挑戦</div>
           <div v-for="i in 10" :key="i" class="tooltipcell">

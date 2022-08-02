@@ -1009,6 +1009,15 @@ class Nig {
         return D(2).pow(money.log10() / dv).round();
     };
 
+    resetRankborder() {
+        let remember = this.countRemembers();
+        if (this.isPerfectChallengeActive(7)) remember = Math.pow(remember, 0.5);
+        return D(10).pow((this.isChallengeActive(0) ? 96 : 72) - Math.min(remember / 2.0, 36));
+    };
+    resetCrownborder() {
+        return D('1e216');
+    };
+
     resetLevel(_force, exit, challenge) {
         const gainlevel = this.calcGainLevel();
         let rankresettime = this.player.rankresettime.add(1);
@@ -1034,10 +1043,40 @@ class Nig {
             this.player.disabledchip[random_int] = true;
         }
 
-        this.player.money = D(1);
         this.player.level = this.player.level.add(exit ? D(0) : gainlevel);
         this.player.levelresettime = this.player.levelresettime.add(gainlevelreset);
         this.player.maxlevelgained = this.player.maxlevelgained.max(exit ? D(0) : gainlevel);
+        this.resetLevelData()
+    };
+    //TODO: resetRank is not tested.
+    resetRank(force) {
+        let gain_rank = this.calcGainRank();
+        if (!force && !confirm('昇階リセットして、階位' + gain_rank + 'を得ますか？')) return;
+        if (this.player.onchallenge) {
+            this.player.onchallenge = false;
+            let id = this.calcChallengeId();
+            if (this.player.challengecleared.length >= 128 && !this.player.rankchallengecleared.includes(id)) {
+                this.player.rankchallengecleared.push(this.calcChallengeId());
+            }
+        }
+        let gain_time = this.isRankChallengeBonusActive(8) ? D(3) : D(1);
+        gain_time = gain_time.mul(this.player.setchip[24] + 1).mul(this.player.crownresettime.add(1));
+        this.player.rank = this.player.rank.add(gain_rank);
+        this.player.rankresettime = this.player.rankresettime.add(gain_time);
+        this.resetRankData();
+    };
+    resetCrown(force, exit) {
+        let gain_crown = this.calcGainCrown();
+        if (!force && !confirm('昇冠リセットして、冠位' + gain_crown + 'を得ますか？')) return;
+        if (!exit) {
+            this.player.crown = this.player.crown.add(gain_crown);
+            this.player.crownresettime = this.player.crownresettime.add(1);
+        }
+        this.resetCrownData();
+    };
+
+    resetLevelData() {
+        this.player.money = D(1);
 
         this.player.generators = new Array(8).fill(D(0));
         this.player.generatorsBought = new Array(8).fill(D(0));
@@ -1055,14 +1094,16 @@ class Nig {
         if (this.isRankChallengeBonusActive(1)) this.player.accelerators[0] = this.player.accelerators[0].add(256);
         this.calcToken();
     };
-
-    resetRankborder() {
-        let remember = this.countRemembers();
-        if (this.isPerfectChallengeActive(7)) remember = Math.pow(remember, 0.5);
-        return D(10).pow((this.isChallengeActive(0) ? 96 : 72) - Math.min(remember / 2.0, 36));
+    resetRankData() {
+        this.player.level = D(0);
+        this.player.levelresettime = D(0);
+        this.player.levelitems = new Array(5).fill(0);
+        this.resetLevelData();
     };
-    resetCrownborder() {
-        return D('1e216');
+    resetCrownData() {
+        this.player.rank = D(0);
+        this.player.rankresettime = D(0);
+        this.resetRankData();
     };
 
     calcChallengeId() {
@@ -1101,15 +1142,16 @@ class Nig {
         }
         return true;
     }
-    startPerfectChallenge() {
+    startPerfectChallenge(reset) {
         if (!this.isStartPerfectChallenge()) return false;
-        //TODO:
-        //this.resetCrown(true);
+        if (reset) {
+            this.resetCrown(true, true);
+            this.player.challengecleared = [];
+            this.player.challengebonuses = [];
+            this.player.rankchallengecleared = [];
+            this.player.rankchallengebonuses = [];
+        }
         this.player.onpchallenge = true;
-        //this.player.challengecleared = [];
-        //this.player.challengebonuses = [];
-        //this.player.rankchallengecleared = [];
-        //this.player.rankchallengebonuses = [];
         this.calcToken();
         return true;
     };
@@ -1796,6 +1838,7 @@ const app = Vue.createApp({
             sampleticklabel: ['1', '1e1', '1e2', '1e3', '1e4', '1e5', '1e6', '1e7', '1e8', '1e9'],
             sampletime: [1, 60, 3600, 86400, 2592000, 31536000, 3153600000],
             sampletimelabel: ['s', 'm', 'h', 'D', 'M', 'Y', 'C'],
+            do_perfect_challenge_reset: true,
             hideclearedchallenge: false,
             hidechallengecolor: false,
             showtickminimum: false,
@@ -2055,7 +2098,7 @@ const app = Vue.createApp({
             if (this.nig.player.onpchallenge) {
                 this.nig.exitPerfectChallenge();
             } else {
-                this.nig.startPerfectChallenge();
+                this.nig.startPerfectChallenge(this.do_perfect_challenge_reset);
             }
             this.clearAllCache();
         },
