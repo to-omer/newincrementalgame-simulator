@@ -863,24 +863,28 @@ class Nig {
     calcToken() {
         const challenge_id = this.calcPerfectChallengeId();
         let spent = 0;
-        for (let i of this.player.challengebonuses) {
-            spent += itemdata.rewardcost[i]
-        }
-        let t = this.player.challengecleared.length
+        this.player.challengebonuses.forEach((value, index) => {
+            if (value) {
+                spent += itemdata.rewardcost[index];
+            }
+        });
+        let t = this.player.challengecleared.length;
         if (this.player.onpchallenge) {
-            t = Math.max(t, this.player.pchallengecleared[challenge_id])
+            t = Math.max(t, this.player.pchallengecleared[challenge_id]);
         }
-        this.player.token = t - spent
+        this.player.token = t - spent;
 
         spent = 0;
-        for (let i of this.player.rankchallengebonuses) {
-            spent += itemdata.rewardcost[i]
-        }
-        t = this.player.rankchallengecleared.length
+        this.player.rankchallengebonuses.forEach((value, index) => {
+            if (value) {
+                spent += itemdata.rewardcost[index];
+            }
+        });
+        t = this.player.rankchallengecleared.length;
         if (this.player.onpchallenge) {
-            t = Math.max(t, this.player.prchallengecleared[challenge_id])
+            t = Math.max(t, this.player.prchallengecleared[challenge_id]);
         }
-        this.player.ranktoken = t - spent
+        this.player.ranktoken = t - spent;
 
     };
     isRewardToggleable(index) {
