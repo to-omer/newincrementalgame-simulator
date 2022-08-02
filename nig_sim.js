@@ -260,6 +260,18 @@ class ItemData {
             '煌き使用効率',
             '煌き使用効率裏',
         ];
+        this.perfect_challengetext = [
+            '発生器の倍率が1/100になります。',
+            '間隙のベースは10000毛秒になります。',
+            '発生器3と6は生産をしません。',
+            '倍率は6桁毎に切り捨てられます。',
+            '段位と段位リセットの入手量は大幅に減少します。',
+            '階位の入手量は大幅に減少します。',
+            '輝きと煌きは使用できません。',
+            '記憶と思い出は大幅に弱体化されます。',
+            '裏発生器と裏ポイントは発生器を強化しません。',
+            '鋳片効力は、新規挑戦達成でない段位リセットを行うごとにランダムで1つが無効になります。',
+        ];
     }
 };
 
@@ -363,6 +375,11 @@ class Nig {
                 challengecleared: [],
                 challengebonuses: new Array(15).fill(false),
 
+                onpchallenge: false,
+                pchallenges: [],
+                pchallengecleared: new Array(1024).fill(0),
+                prchallengecleared: new Array(1024).fill(0),
+
                 rankchallengecleared: [],
                 rankchallengebonuses: new Array(15).fill(false),
 
@@ -378,6 +395,8 @@ class Nig {
 
                 chip: new Array(setchipkind).fill(0),
                 setchip: new Array(setchipnum).fill(0),
+                disabledchip: new Array(setchipnum).fill(false),
+
                 statue: new Array(setchipkind).fill(0),
 
                 worldpipe: new Array(10).fill(null).map(() => 0),
@@ -460,6 +479,11 @@ class Nig {
             challengecleared: playerData.challengecleared ?? [],
             challengebonuses: numarr2boolarr(playerData.challengebonuses, 15) ?? new Array(15).fill(false),
 
+            onpchallenge: playerData.onpchallenge ?? false,
+            pchallenges: numarr2boolarr(playerData.pchallenges, 8) ?? new Array(8).fill(false),
+            pchallengecleared: playerData.pchallengecleared ?? new Array(1024).fill(0),
+            prchallengecleared: playerData.prchallengecleared ?? new Array(1024).fill(0),
+
             rankchallengecleared: playerData.rankchallengecleared ?? [],
             rankchallengebonuses: numarr2boolarr(playerData.rankchallengebonuses, 15) ?? new Array(15).fill(false),
 
@@ -475,6 +499,8 @@ class Nig {
 
             chip: playerData.chip ?? new Array(setchipkind).fill(0),
             setchip: playerData.setchip ?? new Array(setchipnum).fill(0),
+            disabledchip: playerData.disabledchip ?? new Array(setchipnum).fill(false),
+
             statue: playerData.statue ?? new Array(setchipkind).fill(0),
 
             worldpipe: playerData.worldpipe ?? new Array(10).fill(null).map(() => 0),
@@ -520,9 +546,18 @@ class Nig {
         if (this.isChallengeBonusActive(3)) mult = mult.mul(D(2));
         if (this.isRankChallengeBonusActive(3)) mult = mult.mul(D(3));
 
-        mult = mult.mul(1 + this.smallmemory * 0.01 + this.memory * 0.25);
+        if (this.isPerfectChallengeActive(0)) mult = mult.div(100);
+
+        let x1 = 0.25;
+        let x2 = 12;
+        if (this.isPerfectChallengeActive(7)) {
+            x1 = 1.0 / 81;
+            x2 = 27;
+        }
+
+        mult = mult.mul(1 + this.smallmemory * 0.01 + this.memory * x1);
         if (this.isRankChallengeBonusActive(11))
-            mult = mult.mul(D(2).pow(D(this.memory).div(12)));
+            mult = mult.mul(D(2).pow(D(this.memory).div(x2)));
 
         mult = mult.mul(1 + Math.sqrt(this.pipedsmallmemory));
 
@@ -532,7 +567,7 @@ class Nig {
             mult = mult.mul(1 + cnt * 0.25);
         }
 
-        if (this.player.darkmoney.gte(1))
+        if (!this.isPerfectChallengeActive(8) && this.player.darkmoney.gte(1))
             mult = mult.mul(D(this.player.darkmoney.add(10).log10()).pow(1 + this.player.setchip[40] * 0.1));
 
         if (this.isRankChallengeBonusActive(9)) {
@@ -572,10 +607,15 @@ class Nig {
                 mult = mult.mul(this.player.maxlevelgained.min(100000));
         }
 
-        if (this.player.darkgenerators[i].gte(1))
+        if (!this.isPerfectChallengeActive(8) && this.player.darkgenerators[i].gte(1))
             mult = mult.mul(D(i + 2 + this.player.darkgenerators[i].log10()).pow(1 + this.player.setchip[i + 32] * 0.25));
 
         mult = mult.mul(1 + this.player.setchip[i + 1] * 0.5);
+
+        if (this.isPerfectChallengeActive(2)) {
+            this.incrementalmults[2] = D(0);
+            this.incrementalmults[5] = D(0);
+        }
 
         this.incrementalmults[i] = mult;
     };
@@ -588,6 +628,11 @@ class Nig {
         let rk = this.player.rank.add(2).div(262142).log2();
         rk += D(this.player.rank.add(2).log2()).log2() * this.player.setchip[23];
         mult = mult.mul(D(lv.pow((i - to) * (1 + Math.max(rk, 0) * 0.05))));
+
+        if (this.isPerfectChallengeActive(3) && mult.gt('1e-100')) {
+            let b = Math.floor(mult.log10() / 6);
+            mult = D(10).pow(b * 6);
+        }
         return mult;
     };
 
@@ -670,7 +715,10 @@ class Nig {
     };
     basetick() {
         const challengebonusescount = this.player.challengebonuses.reduce((x, y) => x + (y ? 1 : 0), 0);
-        return 1000 * (1 + 0.5 * this.player.accelevelused) - this.player.setchip[9] * 50 - this.player.levelitems[1] * challengebonusescount * (1 + this.player.setchip[27] * 0.5);
+        let tick_speed = 1000;
+        if (this.isPerfectChallengeActive(1)) tick_speed = 10000;
+        tick_speed += 500 * this.player.accelevelused;
+        return tick_speed - this.player.setchip[9] * 50 - this.player.levelitems[1] * challengebonusescount * (1 + this.player.setchip[27] * 0.5);
     };
     updateTickspeed() {
         const amult = this.isChallengeBonusActive(6) ? (this.isRankChallengeBonusActive(10) ? this.player.acceleratorsBought[0].pow_base(2) : this.player.acceleratorsBought[0].add(1)) : D(1);
@@ -692,6 +740,7 @@ class Nig {
 
     spendShine(num) {
         if (this.player.shine < num) return;
+        if (this.isPerfectChallengeActive(6)) return;
         this.player.shine -= num;
         const val = D(11 + this.player.setchip[31]).pow(D(num).log10());
         this.updateGenerators(val);
@@ -699,6 +748,7 @@ class Nig {
     };
     spendBrightness(num) {
         if (this.player.brightness < num) return;
+        if (this.isPerfectChallengeActive(6)) return;
         this.player.brightness -= num;
         const val = D(11 + this.player.setchip[50]).pow(D(num * 100).log10());
         const vald = D(10 + this.player.setchip[51]*0.25).pow(D(num).log10());
@@ -715,6 +765,9 @@ class Nig {
     };
     isRankChallengeBonusActive(index) {
         return this.player.rankchallengebonuses[index];
+    };
+    isPerfectChallengeActive(index) {
+        return this.player.onpchallenge && this.player.pchallenges[index];
     };
 
     isGeneratorBuyable(index) {
@@ -807,6 +860,29 @@ class Nig {
         return true;
     };
 
+    calcToken() {
+        const challenge_id = this.calcPerfectChallengeId();
+        let spent = 0;
+        for (let i of this.player.challengebonuses) {
+            spent += itemdata.rewardcost[i]
+        }
+        let t = this.player.challengecleared.length
+        if (this.player.onpchallenge) {
+            t = Math.max(t, this.player.pchallengecleared[challenge_id])
+        }
+        this.player.token = t - spent
+
+        spent = 0;
+        for (let i of this.player.rankchallengebonuses) {
+            spent += itemdata.rewardcost[i]
+        }
+        t = this.player.rankchallengecleared.length
+        if (this.player.onpchallenge) {
+            t = Math.max(t, this.player.prchallengecleared[challenge_id])
+        }
+        this.player.ranktoken = t - spent
+
+    };
     isRewardToggleable(index) {
         return this.player.challengebonuses[index] || (this.player.token >= itemdata.rewardcost[index]);
     };
@@ -861,6 +937,10 @@ class Nig {
         if (this.player.onchallenge) return;
         this.player.challenges[index] = !this.player.challenges[index];
     };
+    configPerfectChallenge(index) {
+        if (this.player.onpchallenge) return;
+        this.player.pchallenges[index] = !this.player.pchallenges[index];
+    };
 
     isGeneratorModeChangeable() {
         return !this.isChallengeActive(3) && !this.isChallengeBonusActive(13);
@@ -898,7 +978,10 @@ class Nig {
                 }
             }
         }
+
+        if (this.isPerfectChallengeActive(4)) gainlevel = D(gainlevel.log2()).max(1);
         gainlevel = gainlevel.round().max(1);
+
         gainlevel = gainlevel.mul(1 + this.eachpipedsmallmemory[2] * 0.2);
         if (this.isChallengeBonusActive(12)) gainlevel = gainlevel.mul(2);
         return gainlevel;
@@ -910,6 +993,7 @@ class Nig {
         dv = dv - this.player.crown.add(2).log2() * 0.1;
         dv = Math.max(dv, 3);
         let gainrank = D(money.log10()).div(dv).pow_base(2).round();
+        if (this.isPerfectChallengeActive(5)) gainrank = D(gainrank.log10()).max(1);
         if (this.isRankChallengeBonusActive(12)) gainrank = gainrank.mul(3);
         gainrank = gainrank.mul(1 + this.player.setchip[22] * 0.5);
         gainrank = gainrank.mul(1 + this.eachpipedsmallmemory[4] * 0.2);
@@ -923,16 +1007,27 @@ class Nig {
 
     resetLevel(_force, exit, challenge) {
         const gainlevel = this.calcGainLevel();
-        const gainlevelreset = this.player.rankresettime.add(1).mul(1 + this.player.setchip[20]).mul(D(exit ? 0 : this.isChallengeBonusActive(8) ? 2 : 1));
+        let rankresettime = this.player.rankresettime.add(1);
+        if (this.isPerfectChallengeActive(4)) rankresettime = rankresettime.pow(0.1).round();
+        const gainlevelreset = rankresettime.mul(1 + this.player.setchip[20]).mul(D(exit ? 0 : this.isChallengeBonusActive(8) ? 2 : 1));
 
+        let is_challenge_clear = false;
         if (this.player.onchallenge) {
             this.player.onchallenge = false;
-            this.player.token = this.player.token + 1;
-            this.player.challengecleared.push(this.calcChallengeId());
+            const id = this.calcChallengeId();
+            if (!this.player.challengecleared.includes(id)) {
+                this.player.challengecleared.push(id);
+                is_challenge_clear = true;
+            }
         } else if (challenge) {
             this.player.onchallenge = true;
             if (this.player.challenges[3])
                 this.player.generatorsMode = new Array(8).fill(0);
+        }
+        if (this.isPerfectChallengeActive(9) && (!_force) && (!exit) && (!is_challenge_clear)) {
+            const random_int = Math.floor(Math.random() * 100);
+            this.configChip(random_int, 0);
+            this.player.disabledchip[random_int] = true;
         }
 
         this.player.money = D(1);
@@ -954,10 +1049,13 @@ class Nig {
         if (this.isChallengeBonusActive(1)) this.player.accelerators[0] = D(10);
         if (this.isRankChallengeBonusActive(0)) this.player.money = this.player.money.add(D('1e9'));
         if (this.isRankChallengeBonusActive(1)) this.player.accelerators[0] = this.player.accelerators[0].add(256);
+        this.calcToken();
     };
 
     resetRankborder() {
-        return D(10).pow((this.isChallengeActive(0) ? 96 : 72) - Math.min(this.countRemembers() / 2.0, 36));
+        let remember = this.countRemembers();
+        if (this.isPerfectChallengeActive(7)) remember = Math.pow(remember, 0.5);
+        return D(10).pow((this.isChallengeActive(0) ? 96 : 72) - Math.min(remember / 2.0, 36));
     };
     resetCrownborder() {
         return D('1e216');
@@ -969,6 +1067,13 @@ class Nig {
             challengeid = challengeid * 2 + (this.player.challenges[i] ? 1 : 0);
         return challengeid;
     };
+    calcPerfectChallengeId(){
+        let id = 0;
+        for (let i = 9; i >= 0; i--){
+            id = id * 2 + (this.player.pchallenges[i] ? 1 : 0);
+        }
+        return id;
+    };
 
     startChallenge() {
         this.resetLevel(true, true, true);
@@ -979,6 +1084,45 @@ class Nig {
             for (let i = 0; i < 8; i++)
                 this.player.generatorsCost[i] = this.calcGeneratorCost(i, this.player.generatorsBought[i]);
         }
+    };
+    isStartPerfectChallenge() {
+        if (!(this.player.challengecleared.length >= 255 && this.player.rankchallengecleared.length >= 255)) {
+            return false;
+        }
+        const count = this.player.pchallenges.reduce((x, y) => x + (y ? 1 : 0), 0);
+        for (let i = 0; i < 10; i++) {
+            if (this.player.statue[i] < count - i) {
+                return false;
+            }
+        }
+        return true;
+    }
+    startPerfectChallenge() {
+        if (!this.isStartPerfectChallenge()) return false;
+        //TODO:
+        //this.resetCrown(true);
+        this.player.onpchallenge = true;
+        //this.player.challengecleared = [];
+        //this.player.challengebonuses = [];
+        //this.player.rankchallengecleared = [];
+        //this.player.rankchallengebonuses = [];
+        this.calcToken();
+        return true;
+    };
+    exitPerfectChallenge() {
+        const id = this.calcPerfectChallengeId();
+        if (this.player.onchallenge) this.exitChallenge();
+        this.player.onpchallenge = false;
+        this.player.pchallengecleared[id] = Math.max(this.player.pchallengecleared[id], this.player.challengecleared.length);
+        this.player.prchallengecleared[id] = Math.max(this.player.prchallengecleared[id], this.player.rankchallengecleared.length);
+        this.player.challengecleared = [];
+        this.player.rankchallengecleared = [];
+        for (let i = 1; i < 256; i++) {
+            this.player.challengecleared.push(i);
+            this.player.rankchallengecleared.push(i);
+        }
+        this.player.disabledchip = new Array(setchipnum).fill(false);
+        this.calcToken();
     };
 
     moveWorld(i) {
@@ -1212,6 +1356,7 @@ class Nig {
         return false;
     };
     configChip(i, j) {
+        if (this.player.disabledchip[i]) return false;
         if (this.player.setchip[i] == j) return false;
         if (this.player.chip[j - 1] <= this.chipused[j - 1]) return false;
         let oldchip = this.player.setchip[i] - 1;
@@ -1672,6 +1817,12 @@ const app = Vue.createApp({
                 contents += '  階位挑戦: ' + (this.nig.player.rankchallengecleared.includes(id) ? '済' : '未');
             return contents;
         },
+        startPerfectChallengeMessage() {
+            let id = this.nig.calcPerfectChallengeId();
+            let contents = '進行度 通常: ' + (this.nig.player.pchallengecleared[id]);
+            contents += '  上位: ' + (this.nig.player.prchallengecleared[id]);
+            return contents;
+        },
         challengeid: function () {
             return function (i, j) {
                 let id = 0;
@@ -1895,6 +2046,14 @@ const app = Vue.createApp({
                 this.nig.startChallenge();
             }
             this.clearCheckpointsCache();
+        },
+        togglePerfectChallenge() {
+            if (this.nig.player.onpchallenge) {
+                this.nig.exitPerfectChallenge();
+            } else {
+                this.nig.startPerfectChallenge();
+            }
+            this.clearAllCache();
         },
         toggleChip(i) {
             this.nig.toggleChip(i);

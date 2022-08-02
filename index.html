@@ -47,6 +47,11 @@
         aria-expanded="false" aria-controls="rankInfo"
         v-if="nig.player.rankresettime.gt(0) || nig.player.crownresettime.gt(0)">階位</label>
 
+      <input type="checkbox" class="btn-check" id="crownInfoB" autocomplete="off">
+      <label class="btn btn-outline-dark" for="crownInfoB" data-bs-toggle="collapse" data-bs-target="#crownInfo"
+        aria-expanded="false" aria-controls="crownInfo"
+        v-if="nig.player.crownresettime.gt(0)">冠位</label>
+
       <input type="checkbox" class="btn-check" id="shineInfoB" autocomplete="off">
       <label class="btn btn-outline-dark" for="shineInfoB" data-bs-toggle="collapse" data-bs-target="#shineInfo"
         aria-expanded="false" aria-controls="shineInfo" v-if="nig.player.challengecleared.length >= 64">輝き</label>
@@ -314,6 +319,29 @@
       </div>
     </div>
 
+    <div class="collapse" id="crownInfo">
+      <div class="card card-body">
+        <div>※試験用:各種状態がリセットされません</div>
+        <div class="d-flex align-items-center flex-wrap">
+          <div>完全挑戦</div>
+          <div v-for="i in 10" :key="i" class="tooltipcell">
+            <button type="button" class="btn" @click="nig.configPerfectChallenge(i-1)"
+              :class="buttonselectedcls(nig.player.pchallenges[i-1])" :disabled="nig.player.onpchallenge">
+              {{ i }}
+            </button>
+            <span class="uptooltip">{{ itemdata.perfect_challengetext[i-1] }}</span>
+          </div>
+          <div class="tooltipcell">
+            <button type="button" class="btn btn-outline-dark" @click="togglePerfectChallenge"
+              :disabled="!(nig.isStartPerfectChallenge() || nig.player.onpchallenge)">
+              {{ nig.player.onpchallenge ? '挑戦終了' : '挑戦開始' }}
+            </button>
+            <span class="uptooltip" v-html="startPerfectChallengeMessage"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="collapse" id="shineInfo">
       <div class="card card-body">
         <div>
@@ -392,7 +420,8 @@
           <div v-for="i in 52" :key="i" class="tooltipcell">
             <span v-if="i<=32||nig.countRemembers()>=16">
               <button type="button" class="btn btn-outline-dark" :style="chipcoloredbuttoncls(nig.player.setchip[i-1])"
-                @click="toggleChip(i-1)">{{ i }} {{ nig.player.setchip[i-1]==0 ? '　' :
+                @click="toggleChip(i-1)"
+                :disabled="nig.player.disabledchip[i-1]">{{ i }} {{ nig.player.setchip[i-1]==0 ? '　' :
                 itemdata.chipname[nig.player.setchip[i-1]-1] }}</button>
               <span class="uptooltip">{{ itemdata.chipbonusname[i-1] }}</span>
             </span>
