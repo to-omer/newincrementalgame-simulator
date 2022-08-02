@@ -1351,7 +1351,7 @@ class Nig {
     };
     toggleChip(i) {
         let oldchip = this.player.setchip[i];
-        for (let j = oldchip + 1; j <= 4; j++) if (this.configChip(i, j)) return true;
+        for (let j = oldchip + 1; j <= setchipkind; j++) if (this.configChip(i, j)) return true;
         for (let j = 0; j < oldchip; j++) if (this.configChip(i, j)) return true;
         return false;
     };
@@ -2134,8 +2134,19 @@ const app = Vue.createApp({
         chipcoloredbuttoncls(j) {
             if (j === 0) {
                 return {};
+            } else if (j >= 9) {
+                let color = ['silver', 'gold'][j - 9];
+                return {
+                    'background-color': color,
+                    'background-image': 'linear-gradient(135deg,transparent 20%,40%,rgba(255,255,255,1) 50%,60%,transparent 80%)'
+                }
+
             } else {
-                let color = ['#cd7f32', 'silver', 'gold', '#E5E4E2'][j - 1];
+                let color = [
+                    '#cd7f32', 'silver', 'gold',
+                    '#E5E4E2', '#EE82EE', '#FF3333',
+                    '#42FFDD', '#38B48B'
+                ][j - 1];
                 return {
                     'background-color': color,
                 };
