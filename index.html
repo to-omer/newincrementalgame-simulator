@@ -47,6 +47,11 @@
         aria-expanded="false" aria-controls="rankInfo"
         v-if="nig.player.rankresettime.gt(0) || nig.player.crownresettime.gt(0)">階位</label>
 
+      <input type="checkbox" class="btn-check" id="crownInfoB" autocomplete="off">
+      <label class="btn btn-outline-dark" for="crownInfoB" data-bs-toggle="collapse" data-bs-target="#crownInfo"
+        aria-expanded="false" aria-controls="crownInfo"
+        v-if="nig.player.crownresettime.gt(0)">冠位</label>
+
       <input type="checkbox" class="btn-check" id="shineInfoB" autocomplete="off">
       <label class="btn btn-outline-dark" for="shineInfoB" data-bs-toggle="collapse" data-bs-target="#shineInfo"
         aria-expanded="false" aria-controls="shineInfo" v-if="nig.player.challengecleared.length >= 64">輝き</label>
@@ -58,6 +63,10 @@
       <input type="checkbox" class="btn-check" id="chipInfoB" autocomplete="off">
       <label class="btn btn-outline-dark" for="chipInfoB" data-bs-toggle="collapse" data-bs-target="#chipInfo"
         aria-expanded="false" aria-controls="chipInfo" v-if="nig.player.smalltrophies[5]">鋳片</label>
+
+      <input type="checkbox" class="btn-check" id="statueInfoB" autocomplete="off">
+      <label class="btn btn-outline-dark" for="statueInfoB" data-bs-toggle="collapse" data-bs-target="#statueInfo"
+        aria-expanded="false" aria-controls="statueInfo" v-if="nig.player.chip[0] >= 10000 || nig.player.statue[0] >= 1">像</label>
 
       <input type="checkbox" class="btn-check" id="trophyInfoB" autocomplete="off">
       <label class="btn btn-outline-dark" for="trophyInfoB" data-bs-toggle="collapse" data-bs-target="#trophyInfo"
@@ -137,7 +146,7 @@
             <td class="d-grid">
               <button type="button" class="btn btn-outline-dark btn-sm" @click="buyGenerator(i-1)"
                 :disabled="!nig.isGeneratorBuyable(i-1)">
-                {{ nig.player.generatorsCost[i-1].toExponential(1) }}
+                {{ nig.player.generatorsCost[i-1].toExponential(3) }}
               </button>
             </td>
             <td class="align-middle">{{ nig.player.generatorsBought[i-1].toNumber() }}</td>
@@ -154,7 +163,7 @@
             <td class="d-grid" v-if="nig.isAcceleratorOpened(i-1)">
               <button type="button" class="btn btn-outline-dark btn-sm" @click="buyAccelerator(i-1)"
                 :disabled="!nig.isAcceleratorBuyable(i-1)">
-                {{ nig.player.acceleratorsCost[i-1].toExponential(1) }}
+                {{ nig.player.acceleratorsCost[i-1].toExponential(3) }}
               </button>
             </td>
             <td v-else></td>
@@ -173,6 +182,10 @@
           <tr>
             <td class="align-middle" colspan="2">裏ポイント</td>
             <td class="align-middle" colspan="2">{{ formatDecimal(nig.player.darkmoney, 6) }}</td>
+            <template v-if="isLightBought">
+              <td class="align-middle" colspan="2">天上ポイント</td>
+              <td class="align-middle" colspan="2">{{ formatDecimal(nig.player.lightmoney, 6) }}</td>
+            </template>
           </tr>
           <tr>
             <td class="align-middle" colspan="2">裏段位</td>
@@ -181,11 +194,20 @@
           <tr>
             <td class="align-middle" rowspan="2"></td>
             <td class="align-middle" colspan="3">裏発生器</td>
+            <template v-if="isLightBought">
+              <td class="align-middle" rowspan="2"></td>
+              <td class="align-middle" colspan="3">天上発生器</td>
+            </template>
           </tr>
           <tr>
             <td class="align-middle">所持数</td>
             <td class="align-middle">購入コスト</td>
             <td class="align-middle">購入数</td>
+            <template v-if="isLightBought">
+              <td class="align-middle">所持数</td>
+              <td class="align-middle">購入コスト</td>
+              <td class="align-middle">購入数</td>
+            </template>
           </tr>
         </thead>
         <tbody>
@@ -195,10 +217,22 @@
             <td class="d-grid">
               <button type="button" class="btn btn-outline-dark btn-sm" @click="buyDarkGenerator(i-1)"
                 :disabled="!nig.isDarkGeneratorBuyable(i-1)">
-                {{ nig.player.darkgeneratorsCost[i-1].toExponential(1) }}
+                {{ nig.player.darkgeneratorsCost[i-1].toExponential(3) }}
               </button>
             </td>
             <td class="align-middle">{{ nig.player.darkgeneratorsBought[i-1].toNumber() }}</td>
+
+            <template v-if="isLightBought">
+              <td class="align-middle">{{ i }}</td>
+              <td class="align-middle">{{ nig.player.lightgenerators[i-1].toExponential(3) }}</td>
+              <td class="d-grid">
+                <button type="button" class="btn btn-outline-dark btn-sm" @click="buyLightGenerator(i-1)"
+                  :disabled="!nig.isLightGeneratorBuyable(i-1)">
+                  {{ nig.player.lightgeneratorsCost[i-1].toExponential(1) }}
+                </button>
+              </td>
+              <td class="align-middle">{{ nig.player.lightgeneratorsBought[i-1].toNumber() }}</td>
+            </template>
           </tr>
         </tbody>
       </table>
@@ -285,6 +319,32 @@
       </div>
     </div>
 
+    <div class="collapse" id="crownInfo">
+      <div class="card card-body">
+        <div class="form-check">
+          <input class="form-check-input" id="doPC_reset" type="checkbox" v-model="do_perfect_challenge_reset">
+          <label class="form-check-label" for="doPC_reset">挑戦開始時に状態をリセットする</label>
+        </div>
+        <div class="d-flex align-items-center flex-wrap">
+          <div>完全挑戦</div>
+          <div v-for="i in 10" :key="i" class="tooltipcell">
+            <button type="button" class="btn" @click="nig.configPerfectChallenge(i-1)"
+              :class="buttonselectedcls(nig.player.pchallenges[i-1])" :disabled="nig.player.onpchallenge">
+              {{ i }}
+            </button>
+            <span class="uptooltip">{{ itemdata.perfect_challengetext[i-1] }}</span>
+          </div>
+          <div class="tooltipcell">
+            <button type="button" class="btn btn-outline-dark" @click="togglePerfectChallenge"
+              :disabled="!(nig.isStartPerfectChallenge() || nig.player.onpchallenge)">
+              {{ nig.player.onpchallenge ? '挑戦終了' : '挑戦開始' }}
+            </button>
+            <span class="uptooltip" v-html="startPerfectChallengeMessage"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="collapse" id="shineInfo">
       <div class="card card-body">
         <div>
@@ -344,17 +404,17 @@
       <div class="card card-body">
         <div>
           所持鋳片
-          <span v-for="i in 4" :key="i">
+          <span v-for="i in SET_CHIP_KIND" :key="i">
             <span v-show="nig.player.chip[i-1]>0">
-              {{ ' ' }} {{ itemdata.chipname[i-1] }}: {{ nig.player.chip[i-1] }}
+              {{ ' ' }} {{ itemdata.chipname[i-1] + '片' }}: {{ nig.player.chip[i-1] }}
             </span>
           </span>
         </div>
         <div>
           コスト
-          <span v-for="i in 4" :key="i">
+          <span v-for="i in SET_CHIP_KIND" :key="i">
             <span v-show="nig.player.chip[i-1]>0">
-              {{ ' ' }} {{ itemdata.chipname[i-1] }}: {{ nig.chipused[i-1]+1 }}
+              {{ ' ' }} {{ itemdata.chipname[i-1] + '片' }}: {{ nig.chipused[i-1]+1 }}
             </span>
           </span>
         </div>
@@ -363,14 +423,33 @@
           <div v-for="i in 52" :key="i" class="tooltipcell">
             <span v-if="i<=32||nig.countRemembers()>=16">
               <button type="button" class="btn btn-outline-dark" :style="chipcoloredbuttoncls(nig.player.setchip[i-1])"
-                @click="toggleChip(i-1)">{{ i }} {{ nig.player.setchip[i-1]==0 ? '　' :
-                itemdata.chipname[nig.player.setchip[i-1]-1].slice(0, -1) }}</button>
+                @click="toggleChip(i-1)"
+                :disabled="nig.player.disabledchip[i-1]">{{ i }} {{ nig.player.setchip[i-1]==0 ? '　' :
+                itemdata.chipname[nig.player.setchip[i-1]-1] }}</button>
               <span class="uptooltip">{{ itemdata.chipbonusname[i-1] }}</span>
             </span>
           </div>
         </div>
       </div>
     </div>
+
+    <div class="collapse" id="statueInfo">
+      <div class="card card-body">
+        <div v-for="i in SET_CHIP_KIND" :key="i">
+          <div v-show="nig.player.chip[i-1] > 0 || nig.chipused[i-1] > 0">
+            <span>{{itemdata.chipname[i-1] + "像 "}}</span>
+            <span class="tooltipcell">
+              <button type="button" class="btn btn-outline-dark btn-sm" @click="buildStatue(i-1)"
+                :disabled="!nig.isStatueBuildable(i-1)">
+                設像コスト: {{ nig.calcStatueCost(i-1) }}
+              </button>
+            </span>
+            <span> 所持数: {{ nig.player.statue[i-1] }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
 
     <div class="collapse" id="trophyInfo">
       <div class="card card-body">
@@ -379,7 +458,7 @@
           <table class="table-bordered table-sm">
             <tbody>
               <tr>
-                <td v-for="i in 8" :key="i">
+                <td v-for="i in TROPHY_NUM" :key="i">
                   <span>{{ nig.player.trophies[i-1] ? itemdata.trophytext[i-1] : '???' }}</span>
                 </td>
               </tr>
@@ -398,7 +477,7 @@
                   </span>
                 </td>
               </tr>
-              <tr v-for="i in 2" :key="i" v-if="nig.player.crownresettime.gt(0)">
+              <tr v-for="i in 3" :key="i" v-if="nig.player.crownresettime.gt(0)">
                 <td v-for="j in 10" :key="j" class="tooltipcell">
                   <span>{{ nig.player.smalltrophies2nd[i*10+j-11] ? 100+(i-1)*10+j : '　' }}</span>
                   <span class="uptooltip" v-if="spoiler">
