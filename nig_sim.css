@@ -1,5 +1,9 @@
+:root {
+    --chal-width: 80vh;
+}
+
 table.chaltable {
-    width: min(100%, 80vh);
+    width: min(100%, var(--chal-width));
     border-collapse: collapse;
 }
 .chaltable td, .chaltable th {
@@ -83,7 +87,7 @@ td .unchallengeable {
 .chalcolorbar {
     position: relative;
     height: 20px;
-    width: min(100%, 80vh);
+    width: min(100%, var(--chal-width));
     background: linear-gradient(90deg, #00ff00, #11ff52, #23ff9b, #34ffda, #46eeff, #57c2ff, #699fff, #7a86ff, #a18cff, #ca9dff, #e9afff, #ffc0ff);
 }
 .hidechallengecolor .chalcolor, .hidechallengecolor .chalcolorbar {

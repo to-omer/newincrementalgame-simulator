@@ -1862,6 +1862,7 @@ const app = Vue.createApp({
             procmspertick: 0,
             verbose: false,
             spoiler: false,
+            simulatetablewidth: 80,
         }
     },
     computed: {
@@ -2206,6 +2207,10 @@ const app = Vue.createApp({
                     'background-color': color,
                 };
             }
+        },
+        scalechaltable(c) {
+            this.simulatetablewidth = Math.max(20, Math.min(100, this.simulatetablewidth * c));
+            document.querySelector(':root').style.setProperty('--chal-width', `${this.simulatetablewidth}vh`);
         },
     },
     mounted() {
