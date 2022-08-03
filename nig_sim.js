@@ -361,7 +361,7 @@ class Nig {
                 darkgeneratorsCost: [D('1e100'), D('1e108'), D('1e127'), D('1e164'), D('1e225'), D('1e316'), D('1e443'), D('1e612')],
                 darklevel: D(0),
 
-                lightmoney:　D(0),
+                lightmoney: D(0),
                 lightgenerators: new Array(8).fill(D(0)),
                 lightgeneratorsBought: new Array(8).fill(D(0)),
                 lightgeneratorsCost: [D('1e200'), D('1e216'), D('1e281'), D('1e456'), D('1e825'), D('1e1496'), D('1e2601'), D('1e4296')],
@@ -751,7 +751,7 @@ class Nig {
         if (this.isPerfectChallengeActive(6)) return;
         this.player.brightness -= num;
         const val = D(11 + this.player.setchip[50]).pow(D(num * 100).log10());
-        const vald = D(10 + this.player.setchip[51]*0.25).pow(D(num).log10());
+        const vald = D(10 + this.player.setchip[51] * 0.25).pow(D(num).log10());
         this.updateGenerators(val);
         this.updateAccelerators(val);
         this.updateDarkGenerators(vald);
@@ -1112,9 +1112,9 @@ class Nig {
             challengeid = challengeid * 2 + (this.player.challenges[i] ? 1 : 0);
         return challengeid;
     };
-    calcPerfectChallengeId(){
+    calcPerfectChallengeId() {
         let id = 0;
-        for (let i = 9; i >= 0; i--){
+        for (let i = 9; i >= 0; i--) {
             id = id * 2 + (this.player.pchallenges[i] ? 1 : 0);
         }
         return id;
@@ -1192,10 +1192,10 @@ class Nig {
         if (this.player.chip[i] < cost) return false;
         return true;
     };
-    calcStatueCost(i){
+    calcStatueCost(i) {
         return (this.player.statue[i] + 1) * 10000;
     };
-    buildStatue(i){
+    buildStatue(i) {
         let cost = this.calcStatueCost(i);
         if (this.player.chip[i] < cost) return;
         this.player.chip[i] -= cost;
@@ -1334,13 +1334,13 @@ class Nig {
             if (this.player.lightgenerators[5].gte(1)) this.player.smalltrophies2nd[16] = true;
             if (this.player.lightgenerators[6].gte(1)) this.player.smalltrophies2nd[17] = true;
             if (this.player.lightgenerators[7].gte(1)) this.player.smalltrophies2nd[18] = true;
-            if (this.player.chip[4]>0) this.player.smalltrophies2nd[19] = true;
-            if (this.player.chip[4]>=210) this.player.smalltrophies2nd[20] = true;
-            if (this.player.chip[4]>=1275) this.player.smalltrophies2nd[21] = true;
-            if (this.player.statue[0]>=10) this.player.smalltrophies2nd[22] = true;
-            if (this.player.statue[1]>=10) this.player.smalltrophies2nd[23] = true;
-            if (this.player.statue[2]>=10) this.player.smalltrophies2nd[24] = true;
-            if (this.player.statue[3]>=10) this.player.smalltrophies2nd[25] = true;
+            if (this.player.chip[4] > 0) this.player.smalltrophies2nd[19] = true;
+            if (this.player.chip[4] >= 210) this.player.smalltrophies2nd[20] = true;
+            if (this.player.chip[4] >= 1275) this.player.smalltrophies2nd[21] = true;
+            if (this.player.statue[0] >= 10) this.player.smalltrophies2nd[22] = true;
+            if (this.player.statue[1] >= 10) this.player.smalltrophies2nd[23] = true;
+            if (this.player.statue[2] >= 10) this.player.smalltrophies2nd[24] = true;
+            if (this.player.statue[3] >= 10) this.player.smalltrophies2nd[25] = true;
         }
     };
     checkMemories() {
