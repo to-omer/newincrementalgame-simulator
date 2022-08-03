@@ -1678,6 +1678,17 @@ class Nig {
                     events.push([c, 1, i]);
                 }
             }
+        }
+        const cmpev = (a, b) => {
+            const cmpn = (x, y) => x < y ? -1 : x > y ? +1 : 0
+            let c = a[0].cmp(b[0]);
+            if (c === 0) c = cmpn(a[1], b[1]);
+            if (c === 0) c = cmpn(b[2], a[2]);
+            return c;
+        };
+        events.sort(cmpev);
+        const firstg = events.findIndex(a => a[1] === 1);
+        for (let i = 0; i < 8; i++) {
             if (i == 0 || this.player.levelresettime.gt(0) && (i == 1 || this.player.levelitems[3] > i - 2)) {
                 if (!this.isChallengeActive(5)) {
                     for (let j = this.player.acceleratorsBought[i]; ; j = j.add(1)) {
@@ -1688,13 +1699,10 @@ class Nig {
                 }
             }
         }
-        events.sort((a, b) => {
-            const cmpn = (x, y) => x < y ? -1 : x > y ? +1 : 0
-            let c = a[0].cmp(b[0]);
-            if (c === 0) c = cmpn(a[1], b[1]);
-            if (c === 0) c = cmpn(b[2], a[2]);
-            return c;
-        });
+        let tmp = events.splice(firstg + 1);
+        tmp.sort(cmpev);
+        events.splice(firstg + 1, 0, ...tmp);
+
         let res = Array.from(checkpoints).fill(null);
         let totalticks = D(0);
         let totalsec = D(0);
