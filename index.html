@@ -508,6 +508,11 @@
       </div>
       <div>
         <div class="form-check form-check-inline" v-if="nig.player.challengecleared.length>0">
+          <input type="checkbox" class="form-check-input" id="searchChallengeCleared"
+            v-model="challengeConfig.searchChallengeCleared">
+          <label class="form-check-label" for="searchChallengeCleared">クリア済を探索</label>
+        </div>
+        <div class="form-check form-check-inline" v-if="nig.player.challengecleared.length>0">
           <input type="checkbox" class="form-check-input" id="searchChallengeBonuses"
             v-model="challengeConfig.searchChallengeBonuses">
           <label class="form-check-label" for="searchChallengeBonuses">効力探索</label>

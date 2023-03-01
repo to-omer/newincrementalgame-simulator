@@ -1851,6 +1851,7 @@ const app = Vue.createApp({
             hidechallengecolor: false,
             showtickminimum: false,
             challengeConfig: {
+                searchChallengeCleared: true,
                 searchChallengeBonuses: true,
                 searchRankChallengeBonuses: true,
                 searchAccelLevel: true,
@@ -2160,6 +2161,7 @@ const app = Vue.createApp({
                 if (!update) update |= !this.challengeConfig.searchChallengeBonuses && sim[this.nig.world][challengeid].secminimum.challengebonuses !== new Array(15).fill().map((_, i) => i).filter(i => this.nig.player.challengebonuses[i]);
                 if (!update) update |= !this.challengeConfig.searchRankChallengeBonuses && sim[this.nig.world][challengeid].secminimum.rankchallengebonuses !== new Array(15).fill().map((_, i) => i).filter(i => this.nig.player.rankchallengebonuses[i]);
                 if (!update) update |= !this.challengeConfig.searchAccelLevel && sim[this.nig.world][challengeid].secminimum.accelevelused !== this.nig.player.accelevelused;
+                if (update) update &= this.challengeConfig.searchChallengeCleared || !this.nig.player.challengecleared.includes(challengeid) 
 
                 if (update) sim[this.nig.world][challengeid] = this.nig.clone().simulatechallenges(challengeid, rank, JSON.parse(JSON.stringify(this.challengeConfig)));
                 if (rec) this.simulatechallenges(challengeid + 1, rank, rec);
